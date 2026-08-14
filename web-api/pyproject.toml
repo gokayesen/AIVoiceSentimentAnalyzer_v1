@@ -1,0 +1,46 @@
+[project]
+name = "web-api"
+version = "0.1.0"
+description = "AI Voice Sentiment Analyzer — web/API layer (upload, ingest endpoints, status polling, results API)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn[standard]>=0.34,<1.0",
+    "python-multipart>=0.0.20,<1.0",
+    "soundfile>=0.13,<1.0",
+    "mutagen>=1.47,<2.0",
+    "rq==2.10.0",
+    "redis>=5.0,<6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9.0",
+    "httpx>=0.28,<1.0",
+    "ruff>=0.8,<1.0",
+    # Test-only Redis double (RQ's is_async=False + FakeStrictRedis pattern)
+    # — no live Redis needed for tests, per AD-21.
+    "fakeredis>=2.37,<3.0",
+    # Test-fixture generation only (encoding synthetic WAV/MP3/M4A audio for
+    # upload tests) — never imported by app code, not a runtime dependency.
+    "imageio-ffmpeg>=0.5,<1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's dependency-injection defaults (File/Depends/Query/...) are the
+# idiomatic pattern, not a mutable-default bug — exempt them from B008.
+extend-immutable-calls = ["fastapi.File", "fastapi.Depends", "fastapi.Query", "fastapi.Body"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

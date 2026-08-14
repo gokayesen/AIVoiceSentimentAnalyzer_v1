@@ -1,0 +1,41 @@
+services:
+  web-api:
+    build:
+      context: ./web-api
+    ports:
+      - "8000:8000"
+    environment:
+      - STORAGE_DIR=/storage
+      - DB_PATH=/storage/app.db
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./storage:/storage
+    depends_on:
+      - redis
+
+  # Placeholder — becomes functional in Story 2.1 (frontend build/serve pipeline).
+  frontend:
+    build:
+      context: ./frontend
+    profiles: ["full"]
+    ports:
+      - "3000:3000"
+
+  # Functional as of Story 1.2 (async orchestration, AD-13).
+  redis:
+    image: redis:8.10
+
+  # Functional as of Story 1.2 (ingest stage), extended through Story 1.6
+  # (ingest/acoustic/transcript/text-sentiment/fusion — consolidated
+  # ML/audio service, AD-7).
+  ml-service:
+    build:
+      context: ./ml-service
+    environment:
+      - STORAGE_DIR=/storage
+      - DB_PATH=/storage/app.db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./storage:/storage

@@ -1,0 +1,50 @@
+[project]
+name = "ml-service"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "rq==2.10.0",
+    "redis>=5.0,<6",
+    "torch==2.13.0",
+    "torchaudio==2.11.0",
+    # torchaudio 2.11.0's torchaudio.load() is a thin wrapper delegating to
+    # TorchCodec's AudioDecoder (confirmed empirically, not documented in the
+    # Architecture Stack table) — required at runtime, not optional, or
+    # torchaudio.load() raises ModuleNotFoundError. TorchCodec itself needs
+    # system FFmpeg shared libraries (see Dockerfile: apt-get install ffmpeg).
+    "torchcodec>=0.15,<1.0",
+    "silero-vad>=6.2,<7",
+    "transformers==5.14.1",
+    "librosa==0.11.0",
+    "faster-whisper==1.2.1",
+    # Story 1.5 (AD-19): unsupervised statistical keyword extraction, no
+    # model weights, no LLM — see app/pipeline/transcript/keywords.py.
+    "yake>=0.6,<0.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+    "fakeredis>=2.37,<3",
+    "imageio-ffmpeg>=0.5",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+# `pip install .` (Dockerfile.dev) leaves a setuptools build/ artifact
+# directory containing a duplicate copy of app/ — never source, never worth
+# linting (or double-counting real findings against, as happened while
+# implementing Story 1.4).
+extend-exclude = ["build"]

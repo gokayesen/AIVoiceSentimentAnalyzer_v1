@@ -1,0 +1,729 @@
+<title>AI Voice Sentiment Analyzer — 4 Hero Screen Directions</title>
+<meta charset="utf-8">
+<style>
+  /* ===== PAGE CHROME (not a design direction — just the comparison scaffold) ===== */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #E7E9EC;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1A1D21;
+  }
+  .page-wrap { max-width: 1640px; margin: 0 auto; padding: 32px 24px 96px; }
+  .page-head { margin-bottom: 28px; }
+  .page-head h1 { font-size: 22px; margin: 0 0 6px; }
+  .page-head p { font-size: 14px; color: #565B62; max-width: 760px; line-height: 1.5; margin: 0 0 16px; }
+  .toc { display: flex; gap: 10px; flex-wrap: wrap; }
+  .toc a {
+    font-size: 12.5px; text-decoration: none; color: #2B2F33; background: #fff;
+    border: 1px solid #D3D7DC; border-radius: 999px; padding: 6px 14px;
+  }
+  .direction { margin-bottom: 64px; padding-top: 8px; }
+  .direction-head { max-width: 900px; margin-bottom: 18px; }
+  .direction-head .kicker { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8F96; font-weight: 700; }
+  .direction-head h2 { font-size: 20px; margin: 4px 0 8px; }
+  .direction-head p.rationale { font-size: 14px; line-height: 1.55; color: #40454B; margin: 0; }
+  .frames-row { display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .browser-frame {
+    background: #fff; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 10px 30px rgba(0,0,0,0.10);
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .browser-frame.hero { width: 1120px; max-width: 100%; }
+  .browser-frame.list { width: 340px; max-width: 100%; }
+  .browser-topbar {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    background: #E9EAEC; border-bottom: 1px solid #D9DADD;
+  }
+  .browser-dots { display: flex; gap: 6px; }
+  .browser-dots span { width: 9px; height: 9px; border-radius: 50%; display: block; background: #C8C9CC; }
+  .browser-url {
+    flex: 1; background: #fff; border: 1px solid #D9DADD; border-radius: 6px;
+    font-size: 11px; color: #7A7E84; padding: 4px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+</style>
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1>AI Voice Sentiment Analyzer — Analysis Dashboard: 4 Visual Directions</h1>
+    <p>Same hero screen (the Analysis Dashboard an analyst lands on after opening a completed call) and the same paired session call-list screen, rendered in four distinct visual personalities. Content, data, and IA are held constant across all four — only density, type, motion register, and brand voice change. Every direction shows a low-confidence segment and a text/tone disagreement moment directly in the hero mockup.</p>
+    <div class="toc">
+      <a href="#direction-1">1 · Clinical / Data-Dense</a>
+      <a href="#direction-2">2 · Warm / Human-Centered</a>
+      <a href="#direction-3">3 · Editorial / Narrative</a>
+      <a href="#direction-4">4 · Evidence Dossier</a>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- DIRECTION 1 — CLINICAL / DATA-DENSE                                      -->
+  <!-- ======================================================================= -->
+  <section class="direction" id="direction-1">
+    <div class="direction-head">
+      <div class="kicker">Direction 1</div>
+      <h2>Clinical / Data-Dense</h2>
+      <p class="rationale">Reads like a monitoring or observability console: near-black header chrome, hairline borders, tabular layout, and monospaced numerals for every confidence score and timestamp so figures scan like instrument readouts. Density is high on purpose — an analyst working a queue of calls needs to triage fast, and this register signals precision over warmth. Content areas stay light per the light-mode-only requirement; only the header/sidebar chrome goes near-black, the way many monitoring tools use a dark command strip over a light data surface.</p>
+    </div>
+
+    <style>
+      /* DIRECTION 1 PALETTE
+         --d1-bg:        #F3F5F7  (page/content background)
+         --d1-panel:     #FFFFFF  (card surface)
+         --d1-chrome:    #0B0F14  (header/sidebar chrome, near-black)
+         --d1-chrome-2:  #161C24  (chrome secondary surface)
+         --d1-chrome-tx: #B9C3CC  (text on chrome)
+         --d1-border:    #D8DEE4  (hairline borders)
+         --d1-text:      #12181F  (primary text)
+         --d1-text-dim:  #5B6672  (secondary text)
+         --d1-red:       #C1352A  (negative)
+         --d1-amber:     #B4790F  (mixed/building)
+         --d1-green:     #23795A  (positive)
+         --d1-gray:      #98A2AC  (neutral)
+         --d1-lowconf:   #AEB6BE  (low-confidence hatch/outline)
+         --d1-mono:      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace
+      */
+      .dir1 { background: #F3F5F7; color: #12181F; font-size: 13px; }
+      .dir1 * { box-sizing: border-box; }
+      .dir1 .app-header {
+        background: #0B0F14; color: #B9C3CC; padding: 10px 18px;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .dir1 .app-header .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: #E7ECF1; }
+      .dir1 .app-header .crumb { font-size: 11px; color: #7C8894; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .dir1 .app-header .user { font-size: 11px; color: #B9C3CC; display: flex; align-items: center; gap: 8px; }
+      .dir1 .app-header .user .avatar { width: 20px; height: 20px; border-radius: 4px; background: #263140; color: #E7ECF1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+      .dir1 .case-strip { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #D8DEE4; background: #FFFFFF; }
+      .dir1 .case-strip h3 { margin: 0; font-size: 15px; font-weight: 700; }
+      .dir1 .case-strip .meta { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #5B6672; }
+      .dir1 .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #D8DEE4; border-bottom: 1px solid #D8DEE4; }
+      .dir1 .summary-cell { background: #fff; padding: 12px 16px; }
+      .dir1 .summary-cell .label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; color: #7C8894; font-weight: 700; }
+      .dir1 .summary-cell .value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 18px; font-weight: 600; margin-top: 4px; }
+      .dir1 .summary-cell .value.neg { color: #C1352A; }
+      .dir1 .summary-cell .sub { font-size: 10.5px; color: #8A939C; margin-top: 3px; }
+      .dir1 .disclaimer { font-size: 10px; color: #8A939C; padding: 6px 18px; border-bottom: 1px solid #D8DEE4; background: #F3F5F7; }
+      .dir1 .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #7C8894; font-weight: 700; padding: 12px 18px 4px; }
+      .dir1 .timeline-wrap { padding: 0 18px 10px; }
+      .dir1 .ticks { display: flex; justify-content: space-between; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9.5px; color: #98A2AC; margin-bottom: 3px; }
+      .dir1 .track { display: flex; height: 34px; border: 1px solid #D8DEE4; border-radius: 3px; overflow: hidden; }
+      .dir1 .seg { position: relative; border-right: 1px solid rgba(255,255,255,0.5); }
+      .dir1 .seg:last-child { border-right: none; }
+      .dir1 .seg.neutral { background: #98A2AC; }
+      .dir1 .seg.amber { background: #B4790F; }
+      .dir1 .seg.red { background: #C1352A; }
+      .dir1 .seg.lowconf {
+        background: repeating-linear-gradient(45deg, #E4E8EC, #E4E8EC 4px, #CFD6DC 4px, #CFD6DC 8px);
+        border: 1px dashed #8A939C;
+      }
+      .dir1 .seg.lowconf::after { content: "?"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #5B6672; font-weight: 700; }
+      .dir1 .seg.disagree { background: linear-gradient(90deg, #98A2AC 50%, #C1352A 50%); }
+      .dir1 .seg.disagree::after { content: "⚠"; position: absolute; top: 2px; right: 3px; font-size: 9px; color: #fff; }
+      .dir1 .legend { display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap; }
+      .dir1 .legend .item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #5B6672; }
+      .dir1 .legend .sw { width: 9px; height: 9px; border-radius: 2px; }
+      .dir1 .main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 0; border-top: 1px solid #D8DEE4; }
+      .dir1 .transcript-panel { border-right: 1px solid #D8DEE4; padding: 10px 0; max-height: 340px; overflow-y: auto; }
+      .dir1 .turn { padding: 7px 18px; border-bottom: 1px solid #EEF1F3; display: flex; gap: 10px; }
+      .dir1 .turn .t { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; color: #98A2AC; width: 42px; flex-shrink: 0; padding-top: 2px; }
+      .dir1 .turn .who { font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; width: 60px; flex-shrink: 0; color: #5B6672; padding-top: 2px; }
+      .dir1 .turn .txt { font-size: 12.5px; line-height: 1.45; flex: 1; }
+      .dir1 .turn.lowconf { background: #F7F8F9; }
+      .dir1 .turn.lowconf .txt { border-left: 2px dashed #AEB6BE; padding-left: 8px; }
+      .dir1 .tag { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 3px; margin-left: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; vertical-align: 1px; }
+      .dir1 .tag.low { background: #E4E8EC; color: #5B6672; border: 1px solid #AEB6BE; }
+      .dir1 .tag.conflict { background: #FBE9E7; color: #C1352A; border: 1px solid #E8B8B2; }
+      .dir1 .turn.disagree .txt { border-left: 2px solid #C1352A; padding-left: 8px; }
+      .dir1 .dual { margin-top: 5px; display: flex; gap: 8px; }
+      .dir1 .dual .half { flex: 1; background: #F7F8F9; border: 1px solid #E4E8EC; border-radius: 3px; padding: 5px 8px; }
+      .dir1 .dual .half .k { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #98A2AC; font-weight: 700; }
+      .dir1 .dual .half .v { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; margin-top: 2px; }
+      .dir1 .acoustic-panel { padding: 10px 18px; }
+      .dir1 .metric { margin-bottom: 12px; }
+      .dir1 .metric .mlabel { display: flex; justify-content: space-between; font-size: 10.5px; color: #5B6672; margin-bottom: 4px; }
+      .dir1 .metric .mval { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; color: #12181F; }
+      .dir1 .bar-track { height: 6px; background: #E4E8EC; border-radius: 3px; overflow: hidden; }
+      .dir1 .bar-fill { height: 100%; background: #5B6672; }
+      .dir1 .bar-fill.warn { background: #C1352A; }
+      .dir1 .note { font-size: 10px; color: #8A939C; margin-top: 10px; line-height: 1.4; padding: 8px; background: #F7F8F9; border: 1px solid #E4E8EC; border-radius: 3px; }
+      /* list screen */
+      .dir1 .list-header { background: #0B0F14; color: #E7ECF1; padding: 12px 16px; }
+      .dir1 .list-header h4 { margin: 0 0 2px; font-size: 13px; }
+      .dir1 .list-header .s { font-size: 10.5px; color: #7C8894; }
+      .dir1 .call-row { padding: 10px 14px; border-bottom: 1px solid #E4E8EC; display: flex; justify-content: space-between; align-items: center; }
+      .dir1 .call-row.active { background: #F3F5F7; border-left: 2px solid #0B0F14; padding-left: 12px; }
+      .dir1 .call-row .fn { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #12181F; }
+      .dir1 .call-row .em { font-size: 10.5px; color: #5B6672; margin-top: 2px; }
+      .dir1 .call-row .conf { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; color: #8A939C; text-align: right; }
+      .dir1 .badge-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+      .dir1 .unattr { font-size: 9px; color: #B4790F; margin-top: 2px; }
+    </style>
+
+    <div class="frames-row">
+      <div class="browser-frame hero">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/calls/case_4471</div></div>
+        <div class="dir1">
+          <div class="app-header">
+            <div class="brand">VOICE SENTIMENT · CONSOLE</div>
+            <div class="crumb">queue/returns-refunds &gt; case_4471.wav</div>
+            <div class="user"><div class="avatar">EY</div> Elif Y. · CX Analyst</div>
+          </div>
+          <div class="case-strip">
+            <h3>case_4471.wav</h3>
+            <div class="meta">DURATION 06:42 · QUEUE Returns &amp; Refunds · ANALYZED 2 MIN AGO</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-cell"><div class="label">Overall Sentiment</div><div class="value neg">Negative</div></div>
+            <div class="summary-cell"><div class="label">Dominant Emotion</div><div class="value neg">Frustration</div><div class="sub">Confidence: 0.84</div></div>
+            <div class="summary-cell"><div class="label">Secondary Signal</div><div class="value" style="color:#B4790F;">Resignation</div><div class="sub">minor, Confidence: 0.41</div></div>
+            <div class="summary-cell"><div class="label">Segments Flagged</div><div class="value">2</div><div class="sub">1 low-conf · 1 signal conflict</div></div>
+          </div>
+          <div class="disclaimer">Model output — acoustic + lexical estimate, not a determination. Analyst review required before action.</div>
+          <div class="section-label">Emotional Timeline</div>
+          <div class="timeline-wrap">
+            <div class="ticks"><span>00:00</span><span>01:30</span><span>03:00</span><span>04:30</span><span>06:00</span><span>06:42</span></div>
+            <div class="track">
+              <div class="seg neutral" style="flex-grow:45;"></div>
+              <div class="seg neutral" style="flex-grow:45;"></div>
+              <div class="seg neutral" style="flex-grow:45;"></div>
+              <div class="seg lowconf" style="flex-grow:30;"></div>
+              <div class="seg amber" style="flex-grow:60;"></div>
+              <div class="seg disagree" style="flex-grow:35;"></div>
+              <div class="seg red" style="flex-grow:70;"></div>
+              <div class="seg red" style="flex-grow:72;"></div>
+            </div>
+            <div class="legend">
+              <div class="item"><span class="sw" style="background:#98A2AC;"></span>Neutral</div>
+              <div class="item"><span class="sw" style="background:#B4790F;"></span>Mixed / building</div>
+              <div class="item"><span class="sw" style="background:#C1352A;"></span>Negative</div>
+              <div class="item"><span class="sw" style="background:repeating-linear-gradient(45deg,#E4E8EC,#E4E8EC 2px,#CFD6DC 2px,#CFD6DC 4px);border:1px dashed #8A939C;"></span>Low confidence</div>
+              <div class="item"><span class="sw" style="background:linear-gradient(90deg,#98A2AC 50%,#C1352A 50%);"></span>Signal conflict</div>
+            </div>
+          </div>
+          <div class="main-grid">
+            <div>
+              <div class="section-label">Transcript — speakers attributed</div>
+              <div class="transcript-panel">
+                <div class="turn"><div class="t">00:12</div><div class="who">Agent</div><div class="txt">Thanks for holding — I can see the return was flagged for manual review. Let me pull that up.</div></div>
+                <div class="turn"><div class="t">00:38</div><div class="who">Customer</div><div class="txt">Sure, take your time.</div></div>
+                <div class="turn"><div class="t">01:47</div><div class="who">Agent</div><div class="txt">I'm showing the refund was processed on the 14th, but it looks like it's still sitting with the bank.</div></div>
+                <div class="turn lowconf"><div class="t">02:20</div><div class="who">Customer</div><div class="txt">Right... okay.<span class="tag low">LOW CONF 0.38</span><br><span style="font-size:10px;color:#8A939C;">Flag reason: utterance &lt; 1.2s, overlapping cross-talk — insufficient acoustic signal.</span></div></div>
+                <div class="turn"><div class="t">03:10</div><div class="who">Agent</div><div class="txt">I'll go ahead and open an escalation so this moves along faster on their end.</div></div>
+                <div class="turn disagree"><div class="t">04:05</div><div class="who">Customer</div><div class="txt">"Okay, that's fine."<span class="tag conflict">CONFLICT</span>
+                  <div class="dual">
+                    <div class="half"><div class="k">Text signal</div><div class="v">Neutral–Positive · 0.66</div></div>
+                    <div class="half"><div class="k">Tone signal</div><div class="v" style="color:#C1352A;">Frustration · 0.71</div></div>
+                  </div>
+                </div></div>
+                <div class="turn"><div class="t">04:22</div><div class="who">Agent</div><div class="txt">Is there anything else I can help with today?</div></div>
+                <div class="turn"><div class="t">05:50</div><div class="who">Customer</div><div class="txt">No. That's all.</div></div>
+              </div>
+            </div>
+            <div class="acoustic-panel">
+              <div class="section-label" style="padding-left:0;">Acoustic Insights</div>
+              <div class="metric"><div class="mlabel"><span>Pitch variance</span><span class="mval">−18% vs. baseline</span></div><div class="bar-track"><div class="bar-fill warn" style="width:24%;"></div></div></div>
+              <div class="metric"><div class="mlabel"><span>Speaking rate</span><span class="mval">+22% (04:05 turn)</span></div><div class="bar-track"><div class="bar-fill warn" style="width:78%;"></div></div></div>
+              <div class="metric"><div class="mlabel"><span>Energy trend, final 90s</span><span class="mval">declining</span></div><div class="bar-track"><div class="bar-fill" style="width:34%;"></div></div></div>
+              <div class="metric"><div class="mlabel"><span>Voice tension marker</span><span class="mval">elevated @ 04:05</span></div><div class="bar-track"><div class="bar-fill warn" style="width:71%;"></div></div></div>
+              <div class="note">Acoustic signal read independently of transcript text. At 04:05 the two disagree — see flagged turn at left.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="browser-frame list">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/calls</div></div>
+        <div class="dir1">
+          <div class="list-header"><h4>This Session</h4><div class="s">5 calls analyzed · not saved after session ends</div></div>
+          <div class="call-row active"><div><div class="fn">case_4471.wav</div><div class="em"><span class="badge-dot" style="background:#C1352A;"></span>Negative · Frustration</div></div><div class="conf">0.84<br>06:42</div></div>
+          <div class="call-row"><div><div class="fn">case_4498.wav</div><div class="em"><span class="badge-dot" style="background:#23795A;"></span>Positive · Satisfaction</div></div><div class="conf">0.91<br>04:15</div></div>
+          <div class="call-row"><div><div class="fn">case_4502.wav</div><div class="em"><span class="badge-dot" style="background:#98A2AC;"></span>Neutral · Calm</div></div><div class="conf">0.77<br>08:03</div></div>
+          <div class="call-row"><div><div class="fn">case_4511.wav</div><div class="em"><span class="badge-dot" style="background:#C1352A;"></span>Negative · Confusion</div></div><div class="conf">0.69<br>03:29</div></div>
+          <div class="call-row"><div><div class="fn">case_4519.wav</div><div class="em"><span class="badge-dot" style="background:#B4790F;"></span>Mixed · Frustration→Relief</div><div class="unattr">⚠ Mono input — turns unattributed</div></div><div class="conf">0.72<br>09:12</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- DIRECTION 2 — WARM / HUMAN-CENTERED                                      -->
+  <!-- ======================================================================= -->
+  <section class="direction" id="direction-2">
+    <div class="direction-head">
+      <div class="kicker">Direction 2</div>
+      <h2>Warm / Human-Centered</h2>
+      <p class="rationale">Still a professional workplace tool, but softened: warm off-white surfaces, generous rounded corners, breathing-room padding, and a terracotta/sage palette instead of red/green alarm colors. The goal is to make a daily task that involves listening to upset customers feel considerate rather than clinical — pill-shaped timeline segments and rounded cards read as calm and legible rather than alarming, while confidence and conflict states are still shown plainly, just without a harsh visual register.</p>
+    </div>
+
+    <style>
+      /* DIRECTION 2 PALETTE
+         --d2-bg:        #FBF6EF  (warm off-white page/content background)
+         --d2-panel:     #FFFFFF  (card surface)
+         --d2-header:    #F3E7D8  (soft header band)
+         --d2-border:    #EDE1D0  (soft borders)
+         --d2-text:      #3A2E22  (primary text, warm near-black)
+         --d2-text-dim:  #8A7960  (secondary text)
+         --d2-terracotta:#D97B5B  (negative / primary accent)
+         --d2-sage:      #7FA37A  (positive)
+         --d2-sand:      #E0A94E  (mixed / low-confidence)
+         --d2-plum:      #9B7EA8  (emotion tag accent)
+         --d2-lowconf-bg:#FBEFD9  (low-confidence tint)
+      */
+      .dir2 { background: #FBF6EF; color: #3A2E22; font-size: 14px; }
+      .dir2 * { box-sizing: border-box; }
+      .dir2 .app-header { background: #F3E7D8; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; }
+      .dir2 .app-header .left h3 { margin: 0 0 3px; font-size: 17px; }
+      .dir2 .app-header .left .meta { font-size: 12px; color: #8A7960; }
+      .dir2 .app-header .user { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #6B5B45; }
+      .dir2 .app-header .user .avatar { width: 26px; height: 26px; border-radius: 50%; background: #D97B5B; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+      .dir2 .summary-row { display: flex; gap: 14px; padding: 18px 22px 6px; }
+      .dir2 .summary-card { flex: 1; background: #fff; border-radius: 16px; padding: 14px 16px; box-shadow: 0 2px 10px rgba(58,46,34,0.06); }
+      .dir2 .summary-card .label { font-size: 11.5px; color: #8A7960; font-weight: 600; }
+      .dir2 .summary-card .value { font-size: 19px; font-weight: 700; margin-top: 5px; color: #C2603F; }
+      .dir2 .summary-card .sub { font-size: 12px; color: #8A7960; margin-top: 3px; }
+      .dir2 .disclaimer { margin: 4px 22px 8px; font-size: 12px; color: #8A7960; background: #fff; border-radius: 12px; padding: 8px 14px; }
+      .dir2 .disclaimer b { color: #6B5B45; }
+      .dir2 .section-title { padding: 14px 22px 8px; font-size: 13.5px; font-weight: 700; color: #5A4A38; }
+      .dir2 .timeline-wrap { padding: 0 22px 8px; }
+      .dir2 .ticks { display: flex; justify-content: space-between; font-size: 11px; color: #A6957D; margin-bottom: 6px; }
+      .dir2 .track { display: flex; height: 22px; gap: 3px; }
+      .dir2 .seg { border-radius: 999px; position: relative; }
+      .dir2 .seg.neutral { background: #E7DCC9; }
+      .dir2 .seg.amber { background: #E0A94E; }
+      .dir2 .seg.red { background: #D97B5B; }
+      .dir2 .seg.lowconf { background: #FBEFD9; border: 2px dotted #E0A94E; }
+      .dir2 .seg.lowconf::after { content: "?"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #B98A2E; font-weight: 700; }
+      .dir2 .seg.disagree { background: linear-gradient(90deg, #E7DCC9 50%, #D97B5B 50%); }
+      .dir2 .seg.disagree::after { content: "◆"; position: absolute; top: 3px; right: 5px; font-size: 8px; color: #fff; }
+      .dir2 .legend { display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+      .dir2 .legend .item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #8A7960; }
+      .dir2 .legend .sw { width: 12px; height: 12px; border-radius: 999px; }
+      .dir2 .main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; padding: 8px 22px 22px; }
+      .dir2 .transcript-panel { background: #fff; border-radius: 18px; padding: 6px 4px; max-height: 360px; overflow-y: auto; box-shadow: 0 2px 10px rgba(58,46,34,0.05); }
+      .dir2 .turn { padding: 10px 16px; margin: 4px; border-radius: 12px; display: flex; gap: 12px; }
+      .dir2 .turn .t { font-size: 11px; color: #B0A08A; width: 40px; flex-shrink: 0; padding-top: 2px; }
+      .dir2 .turn .who { font-size: 11px; font-weight: 700; width: 60px; flex-shrink: 0; color: #A6957D; padding-top: 2px; }
+      .dir2 .turn .txt { font-size: 13.5px; line-height: 1.55; flex: 1; }
+      .dir2 .turn.lowconf { background: #FBEFD9; }
+      .dir2 .turn.disagree { background: #FCEEE7; }
+      .dir2 .tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-left: 6px; }
+      .dir2 .tag.low { background: #F3D89B; color: #7A5A16; }
+      .dir2 .tag.conflict { background: #F2B49C; color: #8C3A1E; }
+      .dir2 .dual { margin-top: 8px; display: flex; gap: 10px; }
+      .dir2 .dual .half { flex: 1; background: #fff; border-radius: 12px; padding: 8px 12px; }
+      .dir2 .dual .half .k { font-size: 10.5px; color: #A6957D; font-weight: 600; }
+      .dir2 .dual .half .v { font-size: 13px; font-weight: 700; margin-top: 3px; }
+      .dir2 .acoustic-panel { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 2px 10px rgba(58,46,34,0.05); align-self: start; }
+      .dir2 .acoustic-panel .h { font-size: 13.5px; font-weight: 700; color: #5A4A38; margin-bottom: 10px; }
+      .dir2 .metric { margin-bottom: 14px; }
+      .dir2 .metric .mlabel { display: flex; justify-content: space-between; font-size: 12px; color: #6B5B45; margin-bottom: 5px; }
+      .dir2 .metric .mval { font-weight: 700; color: #C2603F; }
+      .dir2 .bar-track { height: 8px; background: #F1E7D8; border-radius: 999px; overflow: hidden; }
+      .dir2 .bar-fill { height: 100%; background: #E0A94E; border-radius: 999px; }
+      .dir2 .bar-fill.warn { background: #D97B5B; }
+      .dir2 .note { font-size: 12px; color: #8A7960; margin-top: 12px; line-height: 1.5; background: #FBF6EF; border-radius: 12px; padding: 10px 12px; }
+      /* list screen */
+      .dir2 .list-header { padding: 18px 20px 10px; }
+      .dir2 .list-header h4 { margin: 0 0 3px; font-size: 15px; }
+      .dir2 .list-header .s { font-size: 12px; color: #8A7960; }
+      .dir2 .call-row { margin: 6px 14px; padding: 12px 14px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+      .dir2 .call-row.active { background: #F3E7D8; box-shadow: inset 0 0 0 2px #E0A94E; }
+      .dir2 .call-row .fn { font-size: 13px; font-weight: 600; }
+      .dir2 .call-row .em { font-size: 11.5px; color: #8A7960; margin-top: 3px; }
+      .dir2 .call-row .conf { font-size: 11.5px; color: #A6957D; text-align: right; }
+      .dir2 .badge-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+      .dir2 .unattr { font-size: 10.5px; color: #B98A2E; margin-top: 3px; }
+    </style>
+
+    <div class="frames-row">
+      <div class="browser-frame hero">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/calls/case_4471</div></div>
+        <div class="dir2">
+          <div class="app-header">
+            <div class="left"><h3>case_4471.wav</h3><div class="meta">Returns &amp; Refunds · 06:42 · analyzed 2 min ago</div></div>
+            <div class="user"><div class="avatar">EY</div> Elif · CX Analyst</div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-card"><div class="label">Overall sentiment</div><div class="value">Negative</div></div>
+            <div class="summary-card"><div class="label">Dominant emotion</div><div class="value">Frustration</div><div class="sub">Confidence: 0.84</div></div>
+            <div class="summary-card"><div class="label">Also present</div><div class="value" style="color:#9B7EA8;">Resignation</div><div class="sub">minor, Confidence: 0.41</div></div>
+          </div>
+          <div class="disclaimer"><b>A read, not a ruling.</b> This is our best estimate from tone and words together — you make the final call.</div>
+          <div class="section-title">How the call moved</div>
+          <div class="timeline-wrap">
+            <div class="ticks"><span>00:00</span><span>01:30</span><span>03:00</span><span>04:30</span><span>06:00</span><span>06:42</span></div>
+            <div class="track">
+              <div class="seg neutral" style="flex-grow:45;"></div>
+              <div class="seg neutral" style="flex-grow:45;"></div>
+              <div class="seg neutral" style="flex-grow:45;"></div>
+              <div class="seg lowconf" style="flex-grow:30;"></div>
+              <div class="seg amber" style="flex-grow:60;"></div>
+              <div class="seg disagree" style="flex-grow:35;"></div>
+              <div class="seg red" style="flex-grow:70;"></div>
+              <div class="seg red" style="flex-grow:72;"></div>
+            </div>
+            <div class="legend">
+              <div class="item"><span class="sw" style="background:#E7DCC9;"></span>Neutral</div>
+              <div class="item"><span class="sw" style="background:#E0A94E;"></span>Mixed</div>
+              <div class="item"><span class="sw" style="background:#D97B5B;"></span>Negative</div>
+              <div class="item"><span class="sw" style="background:#FBEFD9;border:2px dotted #E0A94E;"></span>Not sure yet</div>
+              <div class="item"><span class="sw" style="background:linear-gradient(90deg,#E7DCC9 50%,#D97B5B 50%);"></span>Tone ≠ words</div>
+            </div>
+          </div>
+          <div class="main-grid">
+            <div class="transcript-panel">
+              <div class="turn"><div class="t">00:12</div><div class="who">Agent</div><div class="txt">Thanks for holding — I can see the return was flagged for manual review. Let me pull that up.</div></div>
+              <div class="turn"><div class="t">00:38</div><div class="who">Customer</div><div class="txt">Sure, take your time.</div></div>
+              <div class="turn"><div class="t">01:47</div><div class="who">Agent</div><div class="txt">I'm showing the refund was processed on the 14th, but it looks like it's still sitting with the bank.</div></div>
+              <div class="turn lowconf"><div class="t">02:20</div><div class="who">Customer</div><div class="txt">Right... okay.<span class="tag low">Not sure · 0.38</span><br><span style="font-size:11px;color:#B98A2E;">Too short to read tone confidently — flagged for your ear.</span></div></div>
+              <div class="turn"><div class="t">03:10</div><div class="who">Agent</div><div class="txt">I'll go ahead and open an escalation so this moves along faster on their end.</div></div>
+              <div class="turn disagree"><div class="t">04:05</div><div class="who">Customer</div><div class="txt">"Okay, that's fine."<span class="tag conflict">Tone ≠ words</span>
+                <div class="dual">
+                  <div class="half"><div class="k">What she said</div><div class="v">Neutral–positive · 0.66</div></div>
+                  <div class="half"><div class="k">How she said it</div><div class="v" style="color:#C2603F;">Frustration · 0.71</div></div>
+                </div>
+              </div></div>
+              <div class="turn"><div class="t">04:22</div><div class="who">Agent</div><div class="txt">Is there anything else I can help with today?</div></div>
+              <div class="turn"><div class="t">05:50</div><div class="who">Customer</div><div class="txt">No. That's all.</div></div>
+            </div>
+            <div class="acoustic-panel">
+              <div class="h">Acoustic insights</div>
+              <div class="metric"><div class="mlabel"><span>Pitch</span><span class="mval">flat, −18%</span></div><div class="bar-track"><div class="bar-fill warn" style="width:24%;"></div></div></div>
+              <div class="metric"><div class="mlabel"><span>Pace at 04:05</span><span class="mval">+22% faster</span></div><div class="bar-track"><div class="bar-fill warn" style="width:78%;"></div></div></div>
+              <div class="metric"><div class="mlabel"><span>Energy, last 90s</span><span class="mval">fading</span></div><div class="bar-track"><div class="bar-fill" style="width:34%;"></div></div></div>
+              <div class="metric"><div class="mlabel"><span>Voice tension</span><span class="mval">up @ 04:05</span></div><div class="bar-track"><div class="bar-fill warn" style="width:71%;"></div></div></div>
+              <div class="note">Her tone and her words told two different stories around 04:05 — both are shown at left, side by side.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="browser-frame list">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/calls</div></div>
+        <div class="dir2">
+          <div class="list-header"><h4>Your calls today</h4><div class="s">5 analyzed this session · clears when you close the tab</div></div>
+          <div class="call-row active"><div><div class="fn">case_4471.wav</div><div class="em"><span class="badge-dot" style="background:#D97B5B;"></span>Negative · Frustration</div></div><div class="conf">0.84<br>06:42</div></div>
+          <div class="call-row"><div><div class="fn">case_4498.wav</div><div class="em"><span class="badge-dot" style="background:#7FA37A;"></span>Positive · Satisfaction</div></div><div class="conf">0.91<br>04:15</div></div>
+          <div class="call-row"><div><div class="fn">case_4502.wav</div><div class="em"><span class="badge-dot" style="background:#C9BB9C;"></span>Neutral · Calm</div></div><div class="conf">0.77<br>08:03</div></div>
+          <div class="call-row"><div><div class="fn">case_4511.wav</div><div class="em"><span class="badge-dot" style="background:#D97B5B;"></span>Negative · Confusion</div></div><div class="conf">0.69<br>03:29</div></div>
+          <div class="call-row"><div><div class="fn">case_4519.wav</div><div class="em"><span class="badge-dot" style="background:#E0A94E;"></span>Mixed · Frustration→Relief</div><div class="unattr">⚠ Speaker labels unavailable</div></div><div class="conf">0.72<br>09:12</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- DIRECTION 3 — EDITORIAL / NARRATIVE                                      -->
+  <!-- ======================================================================= -->
+  <section class="direction" id="direction-3">
+    <div class="direction-head">
+      <div class="kicker">Direction 3</div>
+      <h2>Editorial / Narrative</h2>
+      <p class="rationale">Treats the call as a document to be close-read: a serif headline and body typeface, a single reading column for the transcript-plus-timeline, and a narrow margin rail for acoustic evidence presented as annotations — the way a critical edition annotates a text. This leans hardest into the product's real differentiator (reading tone, not just words) by making annotation itself the primary interaction metaphor, rather than burying it in a side panel.</p>
+    </div>
+
+    <style>
+      /* DIRECTION 3 PALETTE
+         --d3-bg:        #FBFAF5  (paper background)
+         --d3-panel:     #FFFFFF  (card/callout surface)
+         --d3-ink:       #211D16  (primary text)
+         --d3-ink-dim:   #6E6555  (secondary text)
+         --d3-rule:      #DCD5C3  (hairline rules)
+         --d3-red:       #A23D2E  (negative / editor's-pen accent)
+         --d3-green:     #4C7756  (positive)
+         --d3-amber:     #A5792E  (mixed / low-confidence marginal note)
+         --d3-serif:     Georgia, "Iowan Old Style", "Times New Roman", serif
+      */
+      .dir3 { background: #FBFAF5; color: #211D16; font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; font-size: 15px; }
+      .dir3 * { box-sizing: border-box; }
+      .dir3 .masthead { padding: 18px 32px 12px; border-bottom: 3px double #DCD5C3; display: flex; justify-content: space-between; align-items: baseline; }
+      .dir3 .masthead .title { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #6E6555; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .masthead .byline { font-size: 11.5px; color: #6E6555; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .article-body { display: grid; grid-template-columns: 1fr 260px; gap: 32px; padding: 20px 32px 28px; }
+      .dir3 .col-main { max-width: 640px; }
+      .dir3 .kicker2 { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #A23D2E; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 700; margin-bottom: 6px; }
+      .dir3 .headline { font-size: 27px; line-height: 1.2; margin: 0 0 8px; }
+      .dir3 .dek { font-size: 15.5px; color: #4A4438; line-height: 1.5; margin: 0 0 4px; font-style: italic; }
+      .dir3 .dek .conf { font-style: normal; font-weight: 700; }
+      .dir3 .caseline { font-size: 12px; color: #6E6555; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 10px 0 16px; padding-bottom: 12px; border-bottom: 1px solid #DCD5C3; }
+      .dir3 .timeline-strip { margin-bottom: 18px; }
+      .dir3 .timeline-strip .cap { font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #6E6555; margin-bottom: 6px; }
+      .dir3 .track { display: flex; height: 16px; border-bottom: 1px solid #211D16; }
+      .dir3 .seg { position: relative; }
+      .dir3 .seg.neutral { background: #E4E0D1; }
+      .dir3 .seg.amber { background: #C9A25F; }
+      .dir3 .seg.red { background: #A23D2E; }
+      .dir3 .seg.lowconf { background: repeating-linear-gradient(45deg, #FBFAF5, #FBFAF5 4px, #E4E0D1 4px, #E4E0D1 8px); border-top: 1px solid #A5792E; border-bottom: 1px solid #A5792E; }
+      .dir3 .seg.disagree { background: linear-gradient(90deg, #E4E0D1 50%, #A23D2E 50%); }
+      .dir3 .ticks { display: flex; justify-content: space-between; font-size: 10px; color: #9A917E; margin-top: 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .transcript { }
+      .dir3 p.turn { margin: 0 0 14px; line-height: 1.65; }
+      .dir3 p.turn .t { font-size: 11px; color: #9A917E; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin-right: 6px; }
+      .dir3 p.turn .who { font-weight: 700; font-style: italic; }
+      .dir3 p.turn.lowconf { padding: 8px 12px; background: #F6F3E9; border-left: 3px dotted #A5792E; }
+      .dir3 p.turn.disagree { padding: 8px 12px; background: #FBEFEA; border-left: 3px solid #A23D2E; }
+      .dir3 .margin-note { font-size: 12px; color: #6E6555; font-style: italic; margin-top: 4px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .dual { display: flex; gap: 10px; margin-top: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .dual .half { flex: 1; border: 1px solid #E4D9CE; background: #fff; padding: 6px 10px; border-radius: 2px; }
+      .dir3 .dual .half .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #9A917E; }
+      .dir3 .dual .half .v { font-size: 13px; font-weight: 700; margin-top: 2px; font-family: Georgia, serif; }
+      .dir3 .col-rail { border-left: 1px solid #DCD5C3; padding-left: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .col-rail .rail-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #6E6555; font-weight: 700; margin-bottom: 12px; }
+      .dir3 .footnote { font-size: 12.5px; line-height: 1.55; color: #3A342A; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dotted #DCD5C3; }
+      .dir3 .footnote .num { font-weight: 700; color: #A23D2E; }
+      .dir3 .footnote .mval { font-weight: 700; }
+      .dir3 .pullquote { font-family: Georgia, serif; font-size: 15px; font-style: italic; color: #211D16; border-left: 3px solid #211D16; padding-left: 12px; margin: 16px 0; line-height: 1.5; }
+      /* list screen */
+      .dir3 .list-masthead { padding: 16px 20px 10px; border-bottom: 3px double #DCD5C3; }
+      .dir3 .list-masthead .t { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6E6555; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .list-masthead h4 { margin: 4px 0 2px; font-size: 17px; font-weight: normal; }
+      .dir3 .list-masthead .s { font-size: 11.5px; color: #9A917E; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .call-row { padding: 12px 20px; border-bottom: 1px solid #EEE9DC; }
+      .dir3 .call-row.active { background: #F6F3E9; }
+      .dir3 .call-row .fn { font-size: 14px; }
+      .dir3 .call-row .em { font-size: 12px; color: #6E6555; margin-top: 3px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .call-row .conf { font-size: 11px; color: #9A917E; margin-top: 3px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .dir3 .unattr { font-size: 10.5px; color: #A5792E; margin-top: 3px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    </style>
+
+    <div class="frames-row">
+      <div class="browser-frame hero">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/calls/case_4471</div></div>
+        <div class="dir3">
+          <div class="masthead">
+            <div class="title">Voice Sentiment Review</div>
+            <div class="byline">Reviewed by Elif Y., CX Analyst</div>
+          </div>
+          <div class="article-body">
+            <div class="col-main">
+              <div class="kicker2">Case File — Returns &amp; Refunds</div>
+              <h1 class="headline">case_4471.wav reads negative, with frustration as the dominant emotional signal.</h1>
+              <p class="dek">Estimated from tone and word choice together. <span class="conf">Confidence: 0.84.</span> A secondary, minor signal of resignation is also present (Confidence: 0.41).</p>
+              <div class="caseline">06:42 duration · analyzed 2 minutes ago · not a determination — for analyst review</div>
+              <div class="timeline-strip">
+                <div class="cap">The call, minute by minute</div>
+                <div class="track">
+                  <div class="seg neutral" style="flex-grow:45;"></div>
+                  <div class="seg neutral" style="flex-grow:45;"></div>
+                  <div class="seg neutral" style="flex-grow:45;"></div>
+                  <div class="seg lowconf" style="flex-grow:30;"></div>
+                  <div class="seg amber" style="flex-grow:60;"></div>
+                  <div class="seg disagree" style="flex-grow:35;"></div>
+                  <div class="seg red" style="flex-grow:70;"></div>
+                  <div class="seg red" style="flex-grow:72;"></div>
+                </div>
+                <div class="ticks"><span>00:00</span><span>01:30</span><span>03:00</span><span>04:30</span><span>06:00</span><span>06:42</span></div>
+              </div>
+              <div class="transcript">
+                <p class="turn"><span class="t">00:12</span><span class="who">Agent</span> — "Thanks for holding — I can see the return was flagged for manual review. Let me pull that up."</p>
+                <p class="turn"><span class="t">00:38</span><span class="who">Customer</span> — "Sure, take your time."</p>
+                <p class="turn"><span class="t">01:47</span><span class="who">Agent</span> — "I'm showing the refund was processed on the 14th, but it looks like it's still sitting with the bank."</p>
+                <p class="turn lowconf"><span class="t">02:20</span><span class="who">Customer</span> — "Right... okay."<br><span class="margin-note">Marginal note: utterance too short for a confident tone read. Confidence: 0.38.</span></p>
+                <p class="turn"><span class="t">03:10</span><span class="who">Agent</span> — "I'll go ahead and open an escalation so this moves along faster on their end."</p>
+                <p class="turn disagree"><span class="t">04:05</span><span class="who">Customer</span> — "Okay, that's fine."
+                  <div class="dual">
+                    <div class="half"><div class="k">Read as text</div><div class="v">Neutral–positive · 0.66</div></div>
+                    <div class="half"><div class="k">Read as tone</div><div class="v" style="color:#A23D2E;">Frustration · 0.71</div></div>
+                  </div>
+                  <div class="margin-note">The words say one thing; the voice says another. Both readings are kept, not merged.</div>
+                </p>
+                <p class="turn"><span class="t">04:22</span><span class="who">Agent</span> — "Is there anything else I can help with today?"</p>
+                <p class="turn"><span class="t">05:50</span><span class="who">Customer</span> — "No. That's all."</p>
+              </div>
+            </div>
+            <div class="col-rail">
+              <div class="rail-title">Acoustic Annotations</div>
+              <div class="footnote"><span class="num">1.</span> Pitch variance runs flat across the call — <span class="mval">−18%</span> against this customer's opening baseline.</div>
+              <div class="footnote"><span class="num">2.</span> Speaking rate at 04:05 spikes <span class="mval">+22%</span> against her own baseline pace — a clipped, hurried delivery.</div>
+              <div class="footnote"><span class="num">3.</span> Vocal energy trends downward across the final 90 seconds of the call.</div>
+              <div class="footnote"><span class="num">4.</span> A voice-tension marker rises sharply at 04:05, coinciding with the text/tone disagreement at left.</div>
+              <div class="pullquote">"Okay, that's fine" — the transcript's most polite line is, acoustically, its most strained.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="browser-frame list">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/calls</div></div>
+        <div class="dir3">
+          <div class="list-masthead"><div class="t">Voice Sentiment Review</div><h4>This session's calls</h4><div class="s">5 reviewed · session-only, not retained</div></div>
+          <div class="call-row active"><div class="fn">case_4471.wav</div><div class="em">Negative · Frustration</div><div class="conf">Confidence 0.84 · 06:42</div></div>
+          <div class="call-row"><div class="fn">case_4498.wav</div><div class="em">Positive · Satisfaction</div><div class="conf">Confidence 0.91 · 04:15</div></div>
+          <div class="call-row"><div class="fn">case_4502.wav</div><div class="em">Neutral · Calm</div><div class="conf">Confidence 0.77 · 08:03</div></div>
+          <div class="call-row"><div class="fn">case_4511.wav</div><div class="em">Negative · Confusion</div><div class="conf">Confidence 0.69 · 03:29</div></div>
+          <div class="call-row"><div class="fn">case_4519.wav</div><div class="em">Mixed · Frustration → Relief</div><div class="conf">Confidence 0.72 · 09:12</div><div class="unattr">Speaker labels unavailable this call</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- DIRECTION 4 — EVIDENCE DOSSIER (own choice)                              -->
+  <!-- ======================================================================= -->
+  <section class="direction" id="direction-4">
+    <div class="direction-head">
+      <div class="kicker">Direction 4 · own choice</div>
+      <h2>Evidence Dossier</h2>
+      <p class="rationale">This product's actual contract with its user is evidentiary: the model produces exhibits, Elif renders the verdict. A case-file register — kraft-paper surface, exhibit tags, a rubber-stamp treatment for low-confidence and conflicting reads — makes that contract literal rather than implicit in a generic dashboard. It's the direction I'd bet on for this specific product: unlike the clinical console (live-monitoring metaphor), the warm register (approachable but generic), or the editorial register (long-form reading), a dossier metaphor structurally forces every AI output to be framed as evidence to weigh, not an answer to accept — which is exactly the human-in-the-loop posture the PRD and voice guidance both call for.</p>
+    </div>
+
+    <style>
+      /* DIRECTION 4 PALETTE
+         --d4-bg:        #EAE1C8  (kraft/manila page background)
+         --d4-panel:     #F7F2E4  (folder panel surface)
+         --d4-exhibit:   #FCFAF1  (whiter "clipped-in" exhibit card)
+         --d4-ink:       #2B2620  (typewriter-ink text)
+         --d4-ink-dim:   #6B6250  (secondary text)
+         --d4-rule:      #C7BB98  (kraft rule/border)
+         --d4-stamp-red: #9C2B2B  (rubber-stamp red — flags/conflict)
+         --d4-tab-navy:  #33495E  (folder tab label)
+         --d4-olive:     #6E7A4F  (positive marker, muted khaki-green)
+         --d4-rust:      #9C4A2E  (negative marker)
+         --d4-mono:      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace
+      */
+      .dir4 { background: #EAE1C8; color: #2B2620; font-size: 13.5px; }
+      .dir4 * { box-sizing: border-box; }
+      .dir4 .tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
+      .dir4 .tab { background: #D9CDA6; color: #4A4232; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; padding: 6px 14px 8px; border-radius: 6px 6px 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .dir4 .tab.on { background: #F7F2E4; color: #2B2620; }
+      .dir4 .folder { background: #F7F2E4; border-top: 3px solid #33495E; padding: 16px 20px; }
+      .dir4 .case-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px dashed #C7BB98; padding-bottom: 12px; margin-bottom: 12px; }
+      .dir4 .case-head .id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #6B6250; letter-spacing: 0.03em; }
+      .dir4 .case-head h3 { margin: 4px 0 0; font-size: 17px; }
+      .dir4 .case-head .reviewer { text-align: right; font-size: 11px; color: #6B6250; }
+      .dir4 .case-head .reviewer b { color: #2B2620; }
+      .dir4 .findings-row { display: flex; gap: 12px; margin-bottom: 14px; }
+      .dir4 .exhibit-card { flex: 1; background: #FCFAF1; border: 1px solid #C7BB98; border-radius: 3px; padding: 10px 12px; position: relative; }
+      .dir4 .exhibit-card .tag { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; color: #6B6250; letter-spacing: 0.06em; }
+      .dir4 .exhibit-card .val { font-size: 16px; font-weight: 700; margin-top: 4px; color: #9C4A2E; }
+      .dir4 .exhibit-card .conf { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: #6B6250; margin-top: 3px; }
+      .dir4 .clip { position: absolute; top: -6px; right: 10px; width: 14px; height: 20px; border: 2px solid #8C8264; border-bottom: none; border-radius: 6px 6px 0 0; }
+      .dir4 .disclaimer-stamp { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; letter-spacing: 0.05em; color: #6B6250; border: 1px dashed #C7BB98; padding: 5px 10px; margin-bottom: 14px; }
+      .dir4 .section-tab { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; letter-spacing: 0.06em; color: #33495E; font-weight: 700; margin: 14px 0 6px; }
+      .dir4 .timeline-wrap { margin-bottom: 14px; }
+      .dir4 .ticks { display: flex; justify-content: space-between; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9.5px; color: #8C8264; margin-bottom: 4px; }
+      .dir4 .track { display: flex; height: 20px; border: 1px solid #2B2620; }
+      .dir4 .seg { position: relative; border-right: 1px solid #F7F2E4; }
+      .dir4 .seg:last-child { border-right: none; }
+      .dir4 .seg.neutral { background: #C9BE9E; }
+      .dir4 .seg.amber { background: #B08A45; }
+      .dir4 .seg.red { background: #9C4A2E; }
+      .dir4 .seg.lowconf { background: repeating-linear-gradient(45deg, #F7F2E4, #F7F2E4 4px, #DCD2B4 4px, #DCD2B4 8px); }
+      .dir4 .seg.disagree { background: linear-gradient(90deg, #C9BE9E 50%, #9C4A2E 50%); }
+      .dir4 .main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+      .dir4 .transcript-panel { max-height: 330px; overflow-y: auto; padding-right: 4px; }
+      .dir4 .turn { padding: 8px 0; border-bottom: 1px dotted #C7BB98; display: flex; gap: 10px; }
+      .dir4 .turn .t { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; color: #8C8264; width: 42px; flex-shrink: 0; padding-top: 2px; }
+      .dir4 .turn .who { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9.5px; font-weight: 700; width: 58px; flex-shrink: 0; color: #33495E; padding-top: 2px; }
+      .dir4 .turn .txt { font-size: 13px; line-height: 1.5; flex: 1; }
+      .dir4 .stamp { display: inline-block; transform: rotate(-4deg); border: 2px solid #9C2B2B; color: #9C2B2B; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 3px; margin-left: 4px; }
+      .dir4 .exhibit-pair { display: flex; gap: 10px; margin-top: 8px; }
+      .dir4 .exhibit-pair .half { flex: 1; background: #FCFAF1; border: 1px solid #C7BB98; padding: 6px 10px; border-radius: 2px; }
+      .dir4 .exhibit-pair .half .k { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; color: #6B6250; letter-spacing: 0.05em; }
+      .dir4 .exhibit-pair .half .v { font-size: 12.5px; font-weight: 700; margin-top: 2px; }
+      .dir4 .conflict-banner { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9.5px; color: #9C2B2B; font-weight: 700; margin-top: 6px; letter-spacing: 0.03em; }
+      .dir4 .acoustic-panel { background: #FCFAF1; border: 1px solid #C7BB98; border-radius: 3px; padding: 12px 14px; align-self: start; }
+      .dir4 .acoustic-panel .h { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; font-weight: 700; color: #33495E; margin-bottom: 10px; letter-spacing: 0.05em; }
+      .dir4 .metric { margin-bottom: 12px; }
+      .dir4 .metric .mlabel { display: flex; justify-content: space-between; font-size: 11px; color: #4A4232; margin-bottom: 4px; }
+      .dir4 .metric .mval { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; }
+      .dir4 .bar-track { height: 6px; background: #E5DCC0; }
+      .dir4 .bar-fill { height: 100%; background: #6B6250; }
+      .dir4 .bar-fill.warn { background: #9C2B2B; }
+      .dir4 .note { font-size: 11px; color: #6B6250; margin-top: 10px; line-height: 1.45; border-top: 1px dashed #C7BB98; padding-top: 8px; }
+      /* list screen */
+      .dir4 .list-folder { background: #F7F2E4; border-top: 3px solid #33495E; padding: 14px 16px; }
+      .dir4 .list-head { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10.5px; color: #6B6250; letter-spacing: 0.05em; margin-bottom: 4px; }
+      .dir4 .list-folder h4 { margin: 0 0 4px; font-size: 15px; }
+      .dir4 .list-folder .s { font-size: 11px; color: #6B6250; margin-bottom: 10px; }
+      .dir4 .call-row { padding: 9px 10px; border-bottom: 1px dotted #C7BB98; display: flex; justify-content: space-between; }
+      .dir4 .call-row.active { background: #EFE6CB; border-left: 3px solid #33495E; padding-left: 8px; }
+      .dir4 .call-row .fn { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+      .dir4 .call-row .em { font-size: 11px; color: #4A4232; margin-top: 3px; }
+      .dir4 .call-row .conf { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; color: #6B6250; text-align: right; }
+      .dir4 .unattr { font-size: 9.5px; color: #9C2B2B; margin-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+
+    <div class="frames-row">
+      <div class="browser-frame hero">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/case/4471</div></div>
+        <div class="dir4">
+          <div class="tabs">
+            <div class="tab">SESSION LOG</div>
+            <div class="tab on">CASE 4471</div>
+          </div>
+          <div class="folder">
+            <div class="case-head">
+              <div>
+                <div class="id">CASE FILE NO. 4471 — case_4471.wav — RETURNS &amp; REFUNDS</div>
+                <h3>Analysis Dashboard</h3>
+              </div>
+              <div class="reviewer">Assigned reviewer<br><b>Elif Y., CX Analyst</b></div>
+            </div>
+            <div class="findings-row">
+              <div class="exhibit-card"><div class="clip"></div><div class="tag">EXHIBIT — OVERALL SENTIMENT</div><div class="val">Negative</div></div>
+              <div class="exhibit-card"><div class="clip"></div><div class="tag">EXHIBIT — DOMINANT EMOTION</div><div class="val">Frustration</div><div class="conf">CONFIDENCE 0.84</div></div>
+              <div class="exhibit-card"><div class="clip"></div><div class="tag">EXHIBIT — SECONDARY SIGNAL</div><div class="val" style="color:#6E7A4F;">Resignation</div><div class="conf">MINOR · CONFIDENCE 0.41</div></div>
+            </div>
+            <div class="disclaimer-stamp">FINDINGS ARE ESTIMATES, NOT DETERMINATIONS — SUBJECT TO ANALYST REVIEW</div>
+            <div class="section-tab">EXHIBIT C — EMOTIONAL TIMELINE</div>
+            <div class="timeline-wrap">
+              <div class="ticks"><span>00:00</span><span>01:30</span><span>03:00</span><span>04:30</span><span>06:00</span><span>06:42</span></div>
+              <div class="track">
+                <div class="seg neutral" style="flex-grow:45;"></div>
+                <div class="seg neutral" style="flex-grow:45;"></div>
+                <div class="seg neutral" style="flex-grow:45;"></div>
+                <div class="seg lowconf" style="flex-grow:30;"></div>
+                <div class="seg amber" style="flex-grow:60;"></div>
+                <div class="seg disagree" style="flex-grow:35;"></div>
+                <div class="seg red" style="flex-grow:70;"></div>
+                <div class="seg red" style="flex-grow:72;"></div>
+              </div>
+            </div>
+            <div class="main-grid">
+              <div>
+                <div class="section-tab">EXHIBIT D — TRANSCRIPT (SPEAKERS ATTRIBUTED)</div>
+                <div class="transcript-panel">
+                  <div class="turn"><div class="t">00:12</div><div class="who">AGENT</div><div class="txt">Thanks for holding — I can see the return was flagged for manual review. Let me pull that up.</div></div>
+                  <div class="turn"><div class="t">00:38</div><div class="who">CUSTOMER</div><div class="txt">Sure, take your time.</div></div>
+                  <div class="turn"><div class="t">01:47</div><div class="who">AGENT</div><div class="txt">I'm showing the refund was processed on the 14th, but it looks like it's still sitting with the bank.</div></div>
+                  <div class="turn"><div class="t">02:20</div><div class="who">CUSTOMER</div><div class="txt">"Right... okay."<span class="stamp">UNVERIFIED · 0.38</span><br><span style="font-size:10.5px;color:#6B6250;">Insufficient acoustic sample — utterance under 1.2s, cross-talk present.</span></div></div>
+                  <div class="turn"><div class="t">03:10</div><div class="who">AGENT</div><div class="txt">I'll go ahead and open an escalation so this moves along faster on their end.</div></div>
+                  <div class="turn"><div class="t">04:05</div><div class="who">CUSTOMER</div><div class="txt">"Okay, that's fine."
+                    <div class="exhibit-pair">
+                      <div class="half"><div class="k">EXHIBIT A — TRANSCRIPT</div><div class="v">Neutral–Positive · 0.66</div></div>
+                      <div class="half"><div class="k">EXHIBIT B — ACOUSTIC SIGNAL</div><div class="v" style="color:#9C2B2B;">Frustration · 0.71</div></div>
+                    </div>
+                    <div class="conflict-banner">◆ EXHIBITS A/B CONFLICT — RECONCILE BEFORE CITING</div>
+                  </div></div>
+                  <div class="turn"><div class="t">04:22</div><div class="who">AGENT</div><div class="txt">Is there anything else I can help with today?</div></div>
+                  <div class="turn"><div class="t">05:50</div><div class="who">CUSTOMER</div><div class="txt">No. That's all.</div></div>
+                </div>
+              </div>
+              <div class="acoustic-panel">
+                <div class="h">EXHIBIT E — ACOUSTIC LOG</div>
+                <div class="metric"><div class="mlabel"><span>Pitch variance</span><span class="mval">−18%</span></div><div class="bar-track"><div class="bar-fill warn" style="width:24%;"></div></div></div>
+                <div class="metric"><div class="mlabel"><span>Speaking rate @ 04:05</span><span class="mval">+22%</span></div><div class="bar-track"><div class="bar-fill warn" style="width:78%;"></div></div></div>
+                <div class="metric"><div class="mlabel"><span>Energy, final 90s</span><span class="mval">declining</span></div><div class="bar-track"><div class="bar-fill" style="width:34%;"></div></div></div>
+                <div class="metric"><div class="mlabel"><span>Tension marker</span><span class="mval">elevated</span></div><div class="bar-track"><div class="bar-fill warn" style="width:71%;"></div></div></div>
+                <div class="note">Logged independently of transcript text — filed as Exhibit B. See conflict flag on 04:05 turn.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="browser-frame list">
+        <div class="browser-topbar"><div class="browser-dots"><span></span><span></span><span></span></div><div class="browser-url">app.voicesentiment.ai/session</div></div>
+        <div class="dir4">
+          <div class="list-folder">
+            <div class="list-head">SESSION LOG</div>
+            <h4>Open Case Files</h4>
+            <div class="s">5 filed this session — cleared on close, not retained</div>
+            <div class="call-row active"><div><div class="fn">case_4471.wav</div><div class="em">Negative · Frustration</div></div><div class="conf">0.84<br>06:42</div></div>
+            <div class="call-row"><div><div class="fn">case_4498.wav</div><div class="em">Positive · Satisfaction</div></div><div class="conf">0.91<br>04:15</div></div>
+            <div class="call-row"><div><div class="fn">case_4502.wav</div><div class="em">Neutral · Calm</div></div><div class="conf">0.77<br>08:03</div></div>
+            <div class="call-row"><div><div class="fn">case_4511.wav</div><div class="em">Negative · Confusion</div></div><div class="conf">0.69<br>03:29</div></div>
+            <div class="call-row"><div><div class="fn">case_4519.wav</div><div class="em">Mixed · Frustration→Relief</div><div class="unattr">◆ DIARIZATION UNAVAILABLE</div></div><div class="conf">0.72<br>09:12</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>

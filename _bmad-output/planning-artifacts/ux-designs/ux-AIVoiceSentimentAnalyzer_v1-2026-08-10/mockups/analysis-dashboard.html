@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Key Screen — Analysis Dashboard</title>
+<style>
+  /* ==========================================================================
+     KEY SCREEN: Analysis Dashboard (most complex flow's hero screen)
+     Tokens sourced from DESIGN.md frontmatter (updated 2026-08-10), not from
+     .working/directions-1.html — that mock predates several
+     accessibility-driven token/pattern changes applied here: darkened
+     text/text-dim/text-faint/text-label/mixed/neutral-signal, the new
+     low-confidence-border token (separate from the hatch fill), the 11px
+     typography floor (direction-1 used 9.5–10.5px in places), the four-glyph
+     system on the base timeline variants (–/◆/▼/▲, not just the two special
+     states), focus-ring tokens, and the speaker-label uncertain (dotted
+     underline) variant.
+
+     Illustrates (EXPERIENCE.md):
+     - Component Patterns: Timeline; Summary cells; Transcript turn;
+       Dual-signal panel; Acoustic metric bar
+     - State Patterns: Low-confidence segment; Disagreement segment;
+       Speaker attribution uncertain (per-turn, distinct from the
+       whole-Call "unavailable" state and from Sentiment/Emotion
+       low-confidence — dotted underline vs. dashed border)
+     - Key Flows: UJ-1 Path steps 2–3 (open Dashboard, notice + select a
+       low-confidence segment, synchronized transcript/acoustic evidence);
+       UJ-1 Edge case (signal disagreement at 04:05 — "Okay, that's fine"
+       text vs. Frustration tone)
+     - Accessibility Floor: never color-alone (fixed glyph per base variant,
+       independent of fill hue); visible focus state (shown on the
+       low-confidence timeline segment, per DESIGN.md focus-ring spec)
+     ========================================================================== */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #E7E9EC;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .stage { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+  .caption { font-size: 12.5px; color: #565B62; margin: 0 0 16px; line-height: 1.5; max-width: 900px; }
+
+  .browser-frame {
+    background: #fff; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 10px 30px rgba(0,0,0,0.10);
+    border: 1px solid rgba(0,0,0,0.08);
+    width: 1120px; max-width: 100%;
+  }
+  .browser-topbar {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    background: #E9EAEC; border-bottom: 1px solid #D9DADD;
+  }
+  .browser-dots { display: flex; gap: 6px; }
+  .browser-dots span { width: 9px; height: 9px; border-radius: 50%; display: block; background: #C8C9CC; }
+  .browser-url {
+    flex: 1; background: #fff; border: 1px solid #D9DADD; border-radius: 6px;
+    font-size: 11px; color: #7A7E84; padding: 4px 10px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ===== app surface, DESIGN.md tokens ===== */
+  .app { background: #F3F5F7; color: #12181F; font-size: 13px; line-height: 1.45; }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+
+  .app-header {
+    background: #0B0F14; color: #B9C3CC; padding: 10px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .app-header .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: #E7ECF1; }
+  .app-header .crumb {
+    font-size: 11px; color: #7C8894; background: transparent; border: none;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    cursor: pointer; padding: 2px 4px; border-radius: 2px;
+  }
+  .app-header .crumb:focus-visible { outline: 2px solid #E7ECF1; outline-offset: 2px; }
+  .app-header .user { font-size: 11px; color: #B9C3CC; display: flex; align-items: center; gap: 8px; }
+  .app-header .avatar { width: 20px; height: 20px; border-radius: 4px; background: #263140; color: #E7ECF1; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; }
+
+  .case-strip { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #D8DEE4; background: #FFFFFF; }
+  .case-strip h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .case-strip .meta { font-size: 11px; color: #5B6672; }
+
+  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #D8DEE4; border-bottom: 1px solid #D8DEE4; }
+  .summary-cell { background: #fff; padding: 12px 16px; }
+  .summary-cell .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: #5F6B77; font-weight: 700; }
+  .summary-cell .value { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .summary-cell .value.neg { color: #C1352A; }
+  .summary-cell .value.mixed { color: #96650C; }
+  .summary-cell .sub { font-size: 11px; color: #6E7686; margin-top: 3px; }
+  .summary-cell .value a { color: #12181F; text-decoration: underline; }
+  .summary-cell .value a:focus-visible { outline: 2px solid #0B0F14; outline-offset: 2px; }
+
+  .disclaimer { font-size: 11px; color: #6E7686; padding: 6px 18px; border-bottom: 1px solid #D8DEE4; background: #F3F5F7; }
+
+  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #5F6B77; font-weight: 700; padding: 12px 18px 6px; }
+
+  /* ---- timeline ---- */
+  .timeline-wrap { padding: 0 18px 12px; background: #FFFFFF; }
+  .ticks { display: flex; justify-content: space-between; font-size: 11px; color: #6E7686; margin-bottom: 4px; }
+  .track { display: flex; height: 36px; border: 1px solid #D8DEE4; border-radius: 2px; overflow: visible; }
+  .seg {
+    position: relative; display: flex; align-items: flex-start; justify-content: center;
+    border-right: 1px solid rgba(255,255,255,0.55);
+    overflow: hidden;
+  }
+  .seg:first-child { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }
+  .seg:last-child { border-right: none; border-top-right-radius: 2px; border-bottom-right-radius: 2px; }
+  .seg .glyph { margin-top: 3px; font-size: 11px; line-height: 1; font-weight: 700; }
+
+  .seg.neutral { background: #7C8894; }
+  .seg.neutral .glyph { color: #12181F; }
+
+  .seg.positive { background: #23795A; }
+  .seg.positive .glyph { color: #FFFFFF; }
+
+  .seg.mixed { background: #96650C; }
+  .seg.mixed .glyph { color: #FFFFFF; }
+
+  .seg.negative { background: #C1352A; }
+  .seg.negative .glyph { color: #FFFFFF; }
+
+  .seg.lowconf {
+    background: repeating-linear-gradient(45deg, #F2F4F6, #F2F4F6 4px, #8A939C 4px, #8A939C 5px, #F2F4F6 5px, #F2F4F6 9px);
+    border-left: 1px dashed #7C868F; border-right: 1px dashed #7C868F;
+  }
+  .seg.lowconf .glyph { color: #5B6672; }
+  /* Focused state demo: this is the segment UJ-1 step 3 describes the analyst
+     noticing and selecting. Rendered permanently focused (rather than on
+     :focus) to show the focus-ring treatment as a visible state, per
+     DESIGN.md components.focus-ring (on-light-surface: 2px solid
+     {focus-ring}, 2px offset) and applies-to: timeline-segment. */
+  .seg.lowconf.demo-focused {
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #0B0F14;
+    z-index: 2;
+  }
+
+  .seg.disagree { background: linear-gradient(90deg, #7C8894 50%, #C1352A 50%); }
+  .seg.disagree .glyph { color: #FFFFFF; text-shadow: 0 0 2px rgba(11,15,20,0.65); }
+
+  .legend { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+  .legend .item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5B6672; }
+  .legend .sw { width: 12px; height: 12px; border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; flex-shrink: 0; }
+
+  /* ---- main grid: transcript ~60% / acoustic ~40% ---- */
+  .main-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 0; border-top: 1px solid #D8DEE4; }
+  .transcript-panel { border-right: 1px solid #D8DEE4; padding: 8px 0; }
+
+  .turn { padding: 6px 18px; border-bottom: 1px solid #EEF1F3; display: flex; gap: 10px; border-left: 2px solid transparent; }
+  .turn .t { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; color: #6E7686; width: 42px; flex-shrink: 0; padding-top: 2px; }
+  .turn .who-wrap { width: 64px; flex-shrink: 0; padding-top: 2px; }
+  .turn .who {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #5B6672;
+  }
+  .turn .who.uncertain {
+    color: #6E7686; text-decoration: underline dotted #7C868F; text-underline-offset: 3px;
+  }
+  .turn .txt { font-size: 13px; line-height: 1.45; flex: 1; }
+  .turn .reason { display: block; font-size: 11px; color: #6E7686; margin-top: 3px; line-height: 1.4; }
+
+  .turn.lowconf { background: #F7F8F9; border-left: 2px dashed #7C868F; }
+  .turn.disagree { border-left: 2px solid #C1352A; }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 400;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: 1px;
+  }
+  .tag.low { background: #F2F4F6; color: #5B6672; border: 1px solid #7C868F; }
+  .tag.conflict { background: #FBE9E7; color: #C1352A; border: 1px solid #D89890; }
+
+  .dual { margin-top: 6px; display: flex; gap: 6px; }
+  .dual .half { flex: 1; background: #F7F8F9; border: 1px solid #EEF1F3; border-radius: 3px; padding: 5px 8px; }
+  .dual .half .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #6E7686; font-weight: 700; }
+  .dual .half .v {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; font-weight: 400; margin-top: 2px;
+  }
+  .dual .half .v.warn { color: #C1352A; }
+
+  /* ---- acoustic insights ---- */
+  .acoustic-panel { padding: 8px 18px 16px; }
+  .metric { margin-bottom: 14px; }
+  .metric .mlabel { display: flex; justify-content: space-between; font-size: 12px; color: #5B6672; margin-bottom: 4px; gap: 8px; }
+  .metric .mlabel .name { font-weight: 400; }
+  .metric .mval { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-weight: 600; color: #12181F; text-align: right; white-space: nowrap; }
+  .bar-track { height: 6px; background: #F2F4F6; border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: #5B6672; }
+  .bar-fill.warn { background: #C1352A; }
+  .metric .anchor { display: block; font-size: 11px; color: #6E7686; margin-top: 4px; line-height: 1.4; }
+  .note { font-size: 11px; color: #6E7686; margin-top: 10px; line-height: 1.45; padding: 8px; background: #F7F8F9; border: 1px solid #EEF1F3; border-radius: 3px; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <p class="caption">Analysis Dashboard — Analysis Result for case_4471.wav. Timeline shows all six segment states in one realistic pass (neutral, positive, low-confidence, mixed, disagreement, negative). Transcript panel shows a low-confidence turn (dashed left border), a disagreement turn with the full dual-signal panel, and a separate speaker-attribution-uncertain turn (dotted underline on "Agent" — visually distinct from the dashed border). The low-confidence timeline segment is rendered in its focused state to show the focus-ring treatment.</p>
+    <div class="browser-frame">
+      <div class="browser-topbar">
+        <div class="browser-dots"><span></span><span></span><span></span></div>
+        <div class="browser-url">app.voicesentiment.ai/calls/case_4471</div>
+      </div>
+      <div class="app">
+        <div class="app-header">
+          <div class="brand">VOICE SENTIMENT · CONSOLE</div>
+          <button class="crumb">queue/returns-refunds &gt; case_4471.wav</button>
+          <div class="user"><div class="avatar">EY</div> Elif Y. · CX Analyst</div>
+        </div>
+
+        <div class="case-strip">
+          <h2>case_4471.wav</h2>
+          <div class="meta mono">DURATION 06:42 · QUEUE Returns &amp; Refunds · ANALYZED 2 MIN AGO</div>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-cell">
+            <div class="label">Overall Sentiment</div>
+            <div class="value neg">Negative</div>
+          </div>
+          <div class="summary-cell">
+            <div class="label">Dominant Emotion</div>
+            <div class="value neg">Frustration</div>
+            <div class="sub">Confidence: 0.84</div>
+          </div>
+          <div class="summary-cell">
+            <div class="label">Secondary Signal</div>
+            <div class="value mixed">Resignation</div>
+            <div class="sub">minor, Confidence: 0.41</div>
+          </div>
+          <div class="summary-cell">
+            <div class="label">Segments Flagged</div>
+            <div class="value"><a href="#turn-0220">2</a></div>
+            <div class="sub">1 low-conf · 1 signal conflict</div>
+          </div>
+        </div>
+
+        <div class="disclaimer">Model output — acoustic + lexical estimate, not a determination. Analyst review required before action.</div>
+
+        <div class="section-label">Emotional Timeline</div>
+        <div class="timeline-wrap">
+          <div class="ticks"><span>00:00</span><span>01:30</span><span>03:00</span><span>04:30</span><span>06:00</span><span>06:42</span></div>
+          <div class="track">
+            <div class="seg neutral" style="flex-grow:35;" title="00:00–00:35, Neutral, confidence 0.79"><span class="glyph">–</span></div>
+            <div class="seg positive" style="flex-grow:35;" title="00:35–01:10, Positive, confidence 0.73"><span class="glyph">▲</span></div>
+            <div class="seg neutral" style="flex-grow:55;" title="01:10–02:05, Neutral, confidence 0.81"><span class="glyph">–</span></div>
+            <div class="seg lowconf demo-focused" style="flex-grow:30;" title="02:05–02:35, Low confidence: utterance under 1.2s, overlapping cross-talk — insufficient acoustic signal"><span class="glyph">?</span></div>
+            <div class="seg mixed" style="flex-grow:65;" title="02:35–03:40, Mixed, confidence 0.58"><span class="glyph">◆</span></div>
+            <div class="seg disagree" style="flex-grow:40;" title="03:40–04:20, Signal disagreement: text 0.66 vs. tone 0.71"><span class="glyph">⚠</span></div>
+            <div class="seg negative" style="flex-grow:142;" title="04:20–06:42, Negative, confidence 0.84"><span class="glyph">▼</span></div>
+          </div>
+          <div class="legend">
+            <div class="item"><span class="sw" style="background:#7C8894;color:#12181F;">–</span>Neutral</div>
+            <div class="item"><span class="sw" style="background:#23795A;color:#fff;">▲</span>Positive</div>
+            <div class="item"><span class="sw" style="background:#96650C;color:#fff;">◆</span>Mixed / building</div>
+            <div class="item"><span class="sw" style="background:#C1352A;color:#fff;">▼</span>Negative</div>
+            <div class="item"><span class="sw" style="background:repeating-linear-gradient(45deg,#F2F4F6,#F2F4F6 2px,#8A939C 2px,#8A939C 3px,#F2F4F6 3px,#F2F4F6 5px);border:1px dashed #7C868F;color:#5B6672;">?</span>Low confidence</div>
+            <div class="item"><span class="sw" style="background:linear-gradient(90deg,#7C8894 50%,#C1352A 50%);color:#fff;">⚠</span>Signal conflict</div>
+          </div>
+        </div>
+
+        <div class="main-grid">
+          <div>
+            <div class="section-label">Transcript — speakers attributed</div>
+            <div class="transcript-panel">
+              <div class="turn">
+                <div class="t">00:12</div>
+                <div class="who-wrap"><span class="who">Agent</span></div>
+                <div class="txt">Thanks for holding — I can see the return was flagged for manual review. Let me pull that up.</div>
+              </div>
+              <div class="turn">
+                <div class="t">00:38</div>
+                <div class="who-wrap"><span class="who">Customer</span></div>
+                <div class="txt">Sure, take your time.</div>
+              </div>
+              <div class="turn">
+                <div class="t">01:47</div>
+                <div class="who-wrap"><span class="who">Agent</span></div>
+                <div class="txt">I'm showing the refund was processed on the 14th, but it looks like it's still sitting with the bank.</div>
+              </div>
+              <div class="turn lowconf" id="turn-0220">
+                <div class="t">02:20</div>
+                <div class="who-wrap"><span class="who">Customer</span></div>
+                <div class="txt">Right... okay.<span class="tag low">LOW CONF 0.38</span>
+                  <span class="reason">Flag reason: utterance &lt; 1.2s, overlapping cross-talk — insufficient acoustic signal.</span>
+                </div>
+              </div>
+              <div class="turn">
+                <div class="t">02:41</div>
+                <div class="who-wrap"><span class="who uncertain">Agent</span></div>
+                <div class="txt">— I hear you, let me check what's holding it up.
+                  <span class="reason">Flag reason: overlapping speech — speaker attribution uncertain.</span>
+                </div>
+              </div>
+              <div class="turn">
+                <div class="t">03:10</div>
+                <div class="who-wrap"><span class="who">Agent</span></div>
+                <div class="txt">I'll go ahead and open an escalation so this moves along faster on their end.</div>
+              </div>
+              <div class="turn disagree">
+                <div class="t">04:05</div>
+                <div class="who-wrap"><span class="who">Customer</span></div>
+                <div class="txt">"Okay, that's fine."<span class="tag conflict">CONFLICT</span>
+                  <div class="dual">
+                    <div class="half"><div class="k">Text signal</div><div class="v">Neutral–Positive · 0.66</div></div>
+                    <div class="half"><div class="k">Tone signal</div><div class="v warn">Frustration · 0.71</div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="turn">
+                <div class="t">04:22</div>
+                <div class="who-wrap"><span class="who">Agent</span></div>
+                <div class="txt">Is there anything else I can help with today?</div>
+              </div>
+              <div class="turn">
+                <div class="t">05:50</div>
+                <div class="who-wrap"><span class="who">Customer</span></div>
+                <div class="txt">No. That's all.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acoustic-panel">
+            <div class="section-label" style="padding-left:0;">Acoustic Insights</div>
+
+            <div class="metric">
+              <div class="mlabel"><span class="name">Pitch (F0) variance</span><span class="mval">−18% vs. opening baseline</span></div>
+              <div class="bar-track"><div class="bar-fill warn" style="width:24%;"></div></div>
+              <span class="anchor">Flat across the full call — see 04:05 disagreement for tone context.</span>
+            </div>
+
+            <div class="metric">
+              <div class="mlabel"><span class="name">Speaking rate</span><span class="mval">+22% @ 04:05 turn</span></div>
+              <div class="bar-track"><div class="bar-fill warn" style="width:78%;"></div></div>
+              <span class="anchor">Clipped, hurried delivery — coincides with the 04:05 turn.</span>
+            </div>
+
+            <div class="metric">
+              <div class="mlabel"><span class="name">Energy</span><span class="mval">declining, final 90s</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:34%;"></div></div>
+              <span class="anchor">Fading through 04:20–06:42, the closing negative segment.</span>
+            </div>
+
+            <div class="metric">
+              <div class="mlabel"><span class="name">Pauses / voice activity</span><span class="mval">3 pauses &gt;2s, post-04:00</span></div>
+              <div class="bar-track"><div class="bar-fill warn" style="width:55%;"></div></div>
+              <span class="anchor">Clustered after 04:00 — see 04:05 disagreement turn.</span>
+            </div>
+
+            <div class="note">Acoustic signal read independently of transcript text. At 04:05 the two disagree — see flagged turn at left.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

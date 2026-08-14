@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Key Screen — Session Call List</title>
+<style>
+  /* ==========================================================================
+     KEY SCREEN: Session Call List (canonical entry surface)
+     Tokens sourced from DESIGN.md frontmatter (updated 2026-08-10), not from
+     .working/directions-1.html — several accessibility-driven tokens changed
+     since that mock (darkened text-label/text-faint/mixed/neutral-signal,
+     new low-confidence-border token, 11px typography floor, focus-ring
+     tokens). Layout/composition traces to directions-1.html Direction 1 list
+     frame; visual detail is re-derived from DESIGN.md here.
+
+     Illustrates (EXPERIENCE.md):
+     - Information Architecture: "Session Call List" row (App open / default
+       landing surface; entry point for uploading a new Call)
+     - Component Patterns: Call row, Badge dot
+     - State Patterns: Complete (selectable row); Speaker attribution
+       unavailable (whole-Call state, "Mono input — turns unattributed")
+     - Interaction Primitives: Delete a Call (hover/focus-revealed icon-button)
+     - Accessibility Floor: never color-alone (badge-dot always paired with
+       adjacent Sentiment/Emotion text, never shown alone)
+     ========================================================================== */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #E7E9EC;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .stage { max-width: 760px; margin: 0 auto; padding: 32px 24px 64px; }
+  .caption { font-size: 12.5px; color: #565B62; margin: 0 0 16px; line-height: 1.5; }
+
+  .browser-frame {
+    background: #fff; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 10px 30px rgba(0,0,0,0.10);
+    border: 1px solid rgba(0,0,0,0.08);
+    width: 380px; max-width: 100%;
+  }
+  .browser-topbar {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    background: #E9EAEC; border-bottom: 1px solid #D9DADD;
+  }
+  .browser-dots { display: flex; gap: 6px; }
+  .browser-dots span { width: 9px; height: 9px; border-radius: 50%; display: block; background: #C8C9CC; }
+  .browser-url {
+    flex: 1; background: #fff; border: 1px solid #D9DADD; border-radius: 6px;
+    font-size: 11px; color: #7A7E84; padding: 4px 10px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ===== app surface, DESIGN.md tokens ===== */
+  .app { background: #F3F5F7; color: #12181F; font-size: 13px; line-height: 1.45; }
+
+  .list-header {
+    background: #0B0F14; color: #E7ECF1;
+    padding: 10px 18px;
+  }
+  .list-header .row1 { display: flex; align-items: baseline; justify-content: space-between; }
+  .list-header h1 {
+    margin: 0; font-size: 15px; font-weight: 700; color: #E7ECF1;
+  }
+  .list-header .add-call {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    color: #B9C3CC; text-decoration: none; border: 1px solid #3A4552; border-radius: 3px;
+    padding: 4px 8px;
+  }
+  .list-header .add-call:focus-visible {
+    outline: 2px solid #E7ECF1; outline-offset: 2px;
+  }
+  .list-header .sub { font-size: 11px; color: #B9C3CC; margin-top: 3px; }
+
+  .call-row {
+    position: relative;
+    padding: 12px 14px;
+    border-bottom: 1px solid #EEF1F3;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .call-row.active {
+    background: #F3F5F7;
+    border-left: 2px solid #0B0F14;
+    padding-left: 12px;
+  }
+  .call-row:not(.active) { border-left: 2px solid transparent; }
+  .call-row:focus-visible {
+    outline: 2px solid #0B0F14; outline-offset: -2px;
+  }
+
+  .call-main { min-width: 0; }
+  .call-row .fn {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; font-weight: 600; color: #12181F;
+  }
+  .call-row .sentiment {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #5B6672; margin-top: 3px;
+  }
+  .badge-dot {
+    width: 7px; height: 7px; border-radius: 9999px; display: inline-block; flex-shrink: 0;
+  }
+  .badge-dot.negative { background: #C1352A; }
+  .badge-dot.mixed { background: #96650C; }
+  .badge-dot.positive { background: #23795A; }
+  .badge-dot.neutral { background: #7C8894; }
+
+  .unattr {
+    font-size: 11px; font-weight: 600; color: #96650C; margin-top: 4px;
+  }
+
+  .call-side {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .call-row .conf {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; font-weight: 400; color: #6E7686;
+    text-align: right; line-height: 1.5;
+  }
+
+  .icon-button {
+    width: 22px; height: 22px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; color: #6E7686;
+    flex-shrink: 0;
+  }
+  .icon-button svg { width: 14px; height: 14px; }
+  /* Default state: icon-button is hover/focus-revealed (opacity 0) so the
+     dense list stays quiet. One row below is rendered in its revealed
+     (hovered) state on purpose, to demonstrate the affordance exists. */
+  .icon-button { opacity: 0; }
+  .call-row:hover .icon-button,
+  .call-row:focus-within .icon-button,
+  .icon-button.demo-revealed { opacity: 1; }
+  .icon-button.demo-revealed {
+    background: #F7F8F9; color: #6E7686;
+  }
+  .icon-button:hover, .icon-button.demo-hover-color {
+    color: #12181F;
+  }
+  .icon-button:focus-visible {
+    outline: 2px solid #0B0F14; outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <p class="caption">Session Call List — canonical entry surface. Five Calls in varying Sentiment/Emotion states; case_4511.wav is rendered with its delete icon-button in the revealed (hover/focus) state to show the affordance exists; case_4519.wav shows the mono-input/unattributed state.</p>
+    <div class="browser-frame">
+      <div class="browser-topbar">
+        <div class="browser-dots"><span></span><span></span><span></span></div>
+        <div class="browser-url">app.voicesentiment.ai/calls</div>
+      </div>
+      <div class="app">
+        <div class="list-header">
+          <div class="row1">
+            <h1>This Session</h1>
+            <a class="add-call" href="#">+ Add call</a>
+          </div>
+          <div class="sub">5 calls analyzed this session · not saved after session ends</div>
+        </div>
+
+        <div class="call-row active" tabindex="0">
+          <div class="call-main">
+            <div class="fn">case_4471.wav</div>
+            <div class="sentiment"><span class="badge-dot negative"></span>Negative · Frustration</div>
+          </div>
+          <div class="call-side">
+            <div class="conf">0.84<br>06:42</div>
+            <button class="icon-button" aria-label="Delete case_4471.wav">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4H13M6.5 4V2.5H9.5V4M4.5 4L5 13.5H11L11.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="call-row" tabindex="0">
+          <div class="call-main">
+            <div class="fn">case_4498.wav</div>
+            <div class="sentiment"><span class="badge-dot positive"></span>Positive · Satisfaction</div>
+          </div>
+          <div class="call-side">
+            <div class="conf">0.91<br>04:15</div>
+            <button class="icon-button" aria-label="Delete case_4498.wav">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4H13M6.5 4V2.5H9.5V4M4.5 4L5 13.5H11L11.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="call-row" tabindex="0">
+          <div class="call-main">
+            <div class="fn">case_4502.wav</div>
+            <div class="sentiment"><span class="badge-dot neutral"></span>Neutral · Calm</div>
+          </div>
+          <div class="call-side">
+            <div class="conf">0.77<br>08:03</div>
+            <button class="icon-button" aria-label="Delete case_4502.wav">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4H13M6.5 4V2.5H9.5V4M4.5 4L5 13.5H11L11.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hover/focus-revealed icon-button shown deliberately visible on this row (demo-revealed) to prove the affordance exists, per DESIGN.md icon-button spec: transparent by default, revealed on hover/focus. -->
+        <div class="call-row" tabindex="0">
+          <div class="call-main">
+            <div class="fn">case_4511.wav</div>
+            <div class="sentiment"><span class="badge-dot negative"></span>Negative · Confusion</div>
+          </div>
+          <div class="call-side">
+            <div class="conf">0.69<br>03:29</div>
+            <button class="icon-button demo-revealed" aria-label="Delete case_4511.wav">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4H13M6.5 4V2.5H9.5V4M4.5 4L5 13.5H11L11.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="call-row" tabindex="0">
+          <div class="call-main">
+            <div class="fn">case_4519.wav</div>
+            <div class="sentiment"><span class="badge-dot mixed"></span>Mixed · Frustration → Relief</div>
+            <div class="unattr">Mono input — turns unattributed</div>
+          </div>
+          <div class="call-side">
+            <div class="conf">0.72<br>09:12</div>
+            <button class="icon-button" aria-label="Delete case_4519.wav">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4H13M6.5 4V2.5H9.5V4M4.5 4L5 13.5H11L11.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

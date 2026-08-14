@@ -1,0 +1,79 @@
+# generated: 2026-08-11
+# last_updated: 2026-08-15
+# project: AIVoiceSentimentAnalyzer_v1
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-08-11
+last_updated: 2026-08-15
+project: AIVoiceSentimentAnalyzer_v1
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: done
+  1-1-call-upload-and-validation: done
+  1-2-async-processing-lifecycle-and-audio-ingest: done
+  1-3-mandatory-acoustic-analysis-ser: done
+  1-4-transcript-generation-stt: done
+  1-5-transcript-sentiment-and-context-analysis: done
+  1-6-multimodal-fusion-into-a-single-analysis-result: done
+  1-7-emotional-timeline-retrieval: done
+  1-8-confidence-and-low-confidence-segment-flagging: done
+  1-9-cross-modal-disagreement-surfacing: done
+  1-10-call-deletion-backend: done
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-web-console-frontend-foundation-and-session-call-list-shell: backlog
+  2-2-call-upload-and-processing-status-feedback: backlog
+  2-3-delete-a-call-ui-only: backlog
+  2-4-analysis-dashboard-summary-cells-and-full-result-view: backlog
+  2-5-timeline-transcript-and-acoustic-evidence-drill-down-low-confidence-and-disagreement-states: backlog
+  2-6-no-certainty-language-standing-disclaimer-and-terminology-discipline: backlog
+  2-7-accessibility-floor-and-responsive-fallback-cross-cutting-verification: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-stereo-channel-based-speaker-attribution: backlog
+  3-2-mono-diarization-via-whisperx-and-pyannote: backlog
+  3-3-speaker-attribution-failure-and-uncertainty-states: backlog
+  3-4-speaker-attribution-surfaced-in-dashboard-and-call-list: backlog
+  epic-3-retrospective: optional
