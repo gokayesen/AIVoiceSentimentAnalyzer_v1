@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import uuid
 
+import torch
+
 from app import db
 from app.pipeline.transcript.run import run_transcript
 from app.pipeline.transcript.stt import TurnResult
@@ -237,6 +239,254 @@ def test_run_transcript_text_sentiment_enqueue_failure_also_enqueues_fusion(
     assert len(jobs) == 1
     assert jobs[0].func_name == "app.pipeline.fusion.run.run_fusion"
     assert jobs[0].args == (call_id,)
+
+
+def _canned_turn(_waveform, *, absolute_offset_seconds):
+    return [
+        TurnResult(
+            text="ok",
+            start_time=absolute_offset_seconds,
+            end_time=absolute_offset_seconds + 1.0,
+            words=[],
+        )
+    ]
+
+
+def test_run_transcript_persists_speaker_a_when_channel_0_is_louder(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Story 3.1 (AC1, AC2): a stereo Call whose channel 0 carries the
+    speech-bearing energy gets its turn labeled "Speaker A"."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "stereo_channel0_louder.wav")
+    _seed_segments(call_id, [(0.0, 1.5)])
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] == "Speaker A"
+    assert turns[0]["speaker_channel_index"] == 0
+
+
+def test_run_transcript_persists_speaker_b_when_channel_1_is_louder(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Story 3.1 (AC1, AC2): mirror of the Speaker A case above, channel 1
+    carrying the energy instead."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "stereo_channel1_louder.wav")
+    _seed_segments(call_id, [(0.0, 1.5)])
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] == "Speaker B"
+    assert turns[0]["speaker_channel_index"] == 1
+
+
+def test_run_transcript_mono_call_leaves_speaker_label_none_when_unattributed(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Story 3.1 (AC6): stereo attribution never runs for a mono Call
+    (speaker_channel_index stays None regardless of diarization outcome).
+    Story 3.2: diarization itself is monkeypatched here to return "no
+    attribution" for the turn, proving that outcome leaves speaker_label
+    None too — a real diarization result is covered separately below."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "mono.wav")
+    _seed_segments(call_id, [(0.0, 1.5)])
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+    monkeypatch.setattr(
+        "app.pipeline.transcript.run.diarize_mono_turns", lambda _waveform, turns: [None] * len(turns)
+    )
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] is None
+    assert turns[0]["speaker_channel_index"] is None
+
+
+def test_run_transcript_mono_call_persists_real_diarization_result(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Story 3.2 (AC1, AC4, AC5, AC6): a mono Call whose diarization succeeds
+    gets its turn's speaker_label/speaker_cluster_id/speaker_confidence
+    persisted from diarize_mono_turns's result."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "mono.wav")
+    _seed_segments(call_id, [(0.0, 1.5)])
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+    monkeypatch.setattr(
+        "app.pipeline.transcript.run.diarize_mono_turns",
+        lambda _waveform, turns: [("SPEAKER_00", "Speaker A", 0.9)] * len(turns),
+    )
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] == "Speaker A"
+    assert turns[0]["speaker_channel_index"] is None
+    assert turns[0]["speaker_cluster_id"] == "SPEAKER_00"
+    assert turns[0]["speaker_confidence"] == 0.9
+
+
+def test_run_transcript_stereo_call_never_invokes_mono_diarization(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Story 3.2 (AC3): stereo input never invokes WhisperX/diarization —
+    the channel_count == 1 gate, not != 2, so a stereo Call must never reach
+    diarize_mono_turns at all.
+
+    Code review (2026-08-17): asserts the call count directly rather than
+    only checking speaker_label — a prior version of this test monkeypatched
+    diarize_mono_turns to raise and only asserted speaker_label == "Speaker
+    A", which is fully determined by the independent stereo path and would
+    have passed identically even if the channel_count == 1 gate regressed
+    and wrongly invoked diarization (the exception would be silently
+    absorbed without touching the already-stereo-set speaker_label) — that
+    version provided no actual regression protection for AC3."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "stereo_channel0_louder.wav")
+    _seed_segments(call_id, [(0.0, 1.5)])
+
+    calls: list = []
+
+    def _spy(mono_waveform, turns):
+        calls.append(turns)
+        return [None] * len(turns)
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+    monkeypatch.setattr("app.pipeline.transcript.run.diarize_mono_turns", _spy)
+
+    run_transcript(call_id)
+
+    assert calls == []
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] == "Speaker A"
+
+
+def test_run_transcript_diarization_failure_leaves_turns_unattributed_but_completes(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Story 3.2 (AD-1's governing pattern): a diarization failure (missing/
+    invalid HF_TOKEN, model load error, etc.) must never fail the Call — the
+    turn is persisted unattributed instead, same as Story 3.1's per-turn
+    stereo failure isolation."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "mono.wav")
+    _seed_segments(call_id, [(0.0, 1.5)])
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+    monkeypatch.setattr("app.pipeline.transcript.run.diarize_mono_turns", _raise)
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] is None
+    assert turns[0]["speaker_cluster_id"] is None
+    assert turns[0]["speaker_confidence"] is None
+
+
+def test_run_transcript_attributes_every_turn_in_a_multi_turn_stereo_call(
+    monkeypatch, make_call, fixtures_dir
+):
+    """Code review (2026-08-17), Story 3.1 AC4: attribution must apply to
+    every TranscriptTurn in the Call, not just the first — regression guard
+    against a bug that only attributes the first turn/segment."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=fixtures_dir / "stereo_channel0_louder.wav")
+    _seed_segments(call_id, [(0.0, 1.0), (1.0, 2.0), (2.0, 3.0)])
+
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 3
+    assert all(t["speaker_label"] == "Speaker A" for t in turns)
+    assert all(t["speaker_channel_index"] == 0 for t in turns)
+
+
+def test_run_transcript_three_channel_call_leaves_speaker_label_none(
+    monkeypatch, make_call
+):
+    """Code review (2026-08-17), deferred-work.md (Story 1.2 review): the
+    channel_count == 2 gate must not silently become >= 2 — a >2-channel
+    Call falls through to the same unattributed behavior as mono, never
+    guessed at. Uses a monkeypatched load_mono_waveform (synthetic 3-channel
+    tensor) rather than a new audio fixture, since only the channel count
+    matters here."""
+    call_id = str(uuid.uuid4())
+    make_call(call_id, audio_src=None)
+    _seed_segments(call_id, [(0.0, 1.0)])
+
+    total_samples = 32000  # 2s at VAD_SAMPLE_RATE — plenty for a 1.0s segment + margin
+    fake_raw_waveform = torch.zeros(3, total_samples)
+    fake_mono_waveform = torch.zeros(total_samples)
+
+    monkeypatch.setattr(
+        "app.pipeline.transcript.run.load_mono_waveform",
+        lambda _call_id: (fake_raw_waveform, fake_mono_waveform, 16000),
+    )
+    monkeypatch.setattr("app.pipeline.transcript.run.transcribe_segment", _canned_turn)
+
+    run_transcript(call_id)
+
+    conn = db.get_connection()
+    try:
+        turns = db.get_transcript_turns(conn, call_id=call_id)
+    finally:
+        conn.close()
+    assert len(turns) == 1
+    assert turns[0]["speaker_label"] is None
+    assert turns[0]["speaker_channel_index"] is None
+    # Code review (2026-08-17): also cover Story 3.2's two new columns, same
+    # as the mono diarization-failure test does — a >2-channel Call must
+    # stay unattributed on every speaker field, not just the stereo-path ones.
+    assert turns[0]["speaker_cluster_id"] is None
+    assert turns[0]["speaker_confidence"] is None
 
 
 def test_run_transcript_internal_failure_still_enqueues_fusion(

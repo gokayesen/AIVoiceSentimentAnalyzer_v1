@@ -1,7 +1,11 @@
 """Call resource endpoints: upload/validation (FR-1, FR-2, FR-3; AD-20; AD-7;
 AD-13), Emotional Timeline retrieval (Story 1.7; FR-9, AD-11, AD-13),
 low-confidence segment flagging on that same timeline response (Story 1.8;
-FR-10, AD-16), and Call deletion (Story 1.10; AD-12).
+FR-10, AD-16), Call deletion (Story 1.10; AD-12), and the Analysis
+Dashboard's remaining read-only data (Story 2.4; FR-12): `GET
+/calls/{call_id}/transcript`, `GET /calls/{call_id}/acoustic-summary`, and
+`get_call_status`'s extended complete-branch fields (`completed_at`,
+`single_modality_flag`, `secondary_signal_*`, `no_speech_detected`).
 
 `POST /calls` validates, persists the raw audio, writes Call metadata as
 `queued`, then enqueues an RQ ingest job (Story 1.2) so the ML service picks
@@ -59,6 +63,7 @@ from app.config import (
     LOW_CONFIDENCE_THRESHOLD,
     MAX_DURATION_SECONDS,
     MAX_FILE_SIZE_BYTES,
+    SPEAKER_UNCERTAIN_THRESHOLD,
     STORAGE_DIR,
 )
 
@@ -97,6 +102,42 @@ def _low_confidence_flag(confidence: float) -> tuple[bool, str | None]:
             f"low-confidence threshold ({LOW_CONFIDENCE_THRESHOLD:.2f})."
         )
     return False, None
+
+
+def _speaker_uncertain_flag(speaker_confidence: float | None) -> bool:
+    """Story 3.3 (AC2/AC4/AC6, AD-10): a turn's mono-diarization
+    `speaker_confidence` (Story 3.2) below the configured threshold is
+    "uncertain". `None` (stereo turns always, per Story 3.1 AC5; mono turns
+    diarization never attributed a speaker to at all) is never uncertain —
+    "no confidence value exists" is not the same claim as "confidence is
+    low". Same strictly-less-than, deliberately-not-persisted rationale as
+    `_low_confidence_flag` above, against its own independent threshold
+    (never `LOW_CONFIDENCE_THRESHOLD` — AD-10 forbids conflating the two
+    confidence axes, including at the threshold-tuning level)."""
+    if speaker_confidence is None:
+        return False
+    return speaker_confidence < SPEAKER_UNCERTAIN_THRESHOLD
+
+
+def _speaker_attribution_unavailable_flag(
+    channel_count: int | None, turns: list[sqlite3.Row]
+) -> bool:
+    """Story 3.3/3.4 (AC1/AC3/AC4, AD-6): `True` only for a mono Call
+    (`channel_count == 1`) that has at least one turn, where *every* one of
+    those turns has `speaker_label is None` — "no usable speaker split at
+    all" (AC1's exact wording), not merely "some turns unattributed." A
+    stereo Call
+    (`channel_count == 2`) or one with `channel_count is None` (legacy/
+    unset) always returns `False` structurally, via this same equality
+    check — never a separate branch. A zero-turn Call (`turns` empty, e.g.
+    "no speech detected") also returns `False`, guarded by `turns` being
+    truthy: there is nothing to have failed attribution on.
+
+    Shared by `get_transcript` (Story 3.3, the original computation) and
+    `get_call_status` (Story 3.4) — the Session Call List only ever polls
+    the latter, never `/transcript`, so both endpoints need this same
+    Call-level fact computed identically, from one source."""
+    return bool(channel_count == 1 and turns and all(turn["speaker_label"] is None for turn in turns))
 
 
 def _upload_size(upload: UploadFile) -> int:
@@ -179,6 +220,99 @@ def upload_call(file: UploadFile = File(...)) -> dict:
     return {"call_id": call_id, "status": "queued"}
 
 
+@router.get("/calls/{call_id}")
+def get_call_status(call_id: str) -> dict:
+    """Call-status retrieval (Story 2.2 Task 1). Read-only, same AD-13
+    discipline as `get_timeline` below — reuses `db.get_call` and the new
+    `db.get_analysis_result`, never writes `Call.status` or any ml-service-
+    owned table.
+
+    Exists because `GET /calls/{call_id}/timeline` alone cannot support
+    Story 2.2: it only ever returns 200 once `status == "complete"`, and its
+    409 `CALL_NOT_COMPLETE` error carries the identical `error_code` for
+    `queued`, `processing`, and `failed` alike — a client cannot
+    structurally distinguish "still working" from "processing failed" from
+    that response alone. This endpoint always returns 200 with the Call's
+    real status, plus Sentiment/Emotion/Confidence once `complete`.
+
+    A `complete` Call usually has an `AnalysisResult` row by the time fusion
+    finishes (Story 1.6 AC6) — except a Call with zero `TimelineSegment`
+    rows (silence/no-speech audio), which completes with **no**
+    `AnalysisResult` row at all by design (Story 1.6's 2026-08-14 decision:
+    `db.get_analysis_result(...)` returning `None` on a `complete` Call is
+    the well-defined "no speech detected" signal, not an infra fault). Story
+    2.4 (Task 2) distinguishes the two: `no_speech_detected: true` for the
+    legitimate empty case, with no `overall_*`/`single_modality_flag`/
+    `secondary_signal_*` fields (FR-10/AD-16: never a fabricated Sentiment/
+    Emotion value with nothing behind it) — never a `500`.
+
+    `sqlite3.Error` from either read is treated as an infrastructure fault,
+    same `errors.internal_error` contract `get_timeline` below uses for its
+    own reads (code review, 2026-08-15 — the original version left these two
+    reads unwrapped, the one place in this endpoint that deviated from
+    `get_timeline`'s pattern despite the docstring above claiming parity).
+
+    Story 3.4 (AC4, AD-6): a `complete` Call also gets `speaker_attribution_
+    unavailable` — the same whole-Call fact `get_transcript` computes
+    (Story 3.3), via the shared `_speaker_attribution_unavailable_flag`
+    helper. Present on every `complete` Call, `no_speech_detected` or not.
+    """
+    conn = db.get_connection()
+    try:
+        try:
+            call = db.get_call(conn, call_id=call_id)
+        except sqlite3.Error as exc:
+            raise errors.internal_error(str(exc)) from exc
+
+        if call is None:
+            raise errors.call_not_found(call_id)
+
+        result: dict = {
+            "call_id": call_id,
+            "status": call["status"],
+            "filename": call["filename"],
+            "duration_seconds": call["duration_seconds"],
+        }
+
+        if call["status"] == "complete":
+            result["completed_at"] = call["completed_at"]
+            try:
+                analysis_result = db.get_analysis_result(conn, call_id=call_id)
+                turns = db.get_transcript_turns(conn, call_id=call_id)
+            except sqlite3.Error as exc:
+                raise errors.internal_error(str(exc)) from exc
+            # Story 3.4 (AC4): the Session Call List (frontend) only ever
+            # polls this endpoint, never `/transcript` — so the whole-Call
+            # "attribution unavailable" fact `get_transcript` already
+            # exposes (Story 3.3) must also be exposed here, computed
+            # identically via the shared helper. Set for every complete
+            # Call (both branches below), not just the "has a result"
+            # branch: a zero-turn no-speech Call correctly resolves to
+            # `False` via the helper's own `turns`-truthiness guard.
+            result["speaker_attribution_unavailable"] = _speaker_attribution_unavailable_flag(
+                call["channel_count"], turns
+            )
+            if analysis_result is None:
+                # Story 2.4: "no speech detected" (Story 1.6) is a valid,
+                # expected outcome, not an infra fault — see the docstring
+                # above. Nothing else is added: no fabricated Sentiment/
+                # Emotion/Confidence for a Call that was never analyzed.
+                result["no_speech_detected"] = True
+            else:
+                result["overall_sentiment"] = analysis_result["overall_sentiment"]
+                result["overall_emotion"] = analysis_result["overall_emotion"]
+                result["overall_confidence"] = analysis_result["overall_confidence"]
+                result["single_modality_flag"] = bool(analysis_result["single_modality_flag"])
+                result["secondary_signal_emotion"] = analysis_result["secondary_signal_emotion"]
+                result["secondary_signal_confidence"] = analysis_result[
+                    "secondary_signal_confidence"
+                ]
+    finally:
+        conn.close()
+
+    return result
+
+
 @router.get("/calls/{call_id}/timeline")
 def get_timeline(call_id: str) -> dict:
     """Emotional Timeline retrieval (Story 1.7; FR-9, AD-11, AD-13). See the
@@ -200,18 +334,26 @@ def get_timeline(call_id: str) -> dict:
         if call is None:
             raise errors.call_not_found(call_id)
         if call["status"] != "complete":
-            raise errors.call_not_complete(call_id, call["status"])
+            raise errors.call_not_complete(call_id, call["status"], resource="The Emotional Timeline")
 
         try:
             segments = db.get_timeline_segments(conn, call_id=call_id)
+            acoustic_rows = db.get_acoustic_evidence_for_call(conn, call_id=call_id)
         except sqlite3.Error as exc:
             raise errors.internal_error(str(exc)) from exc
     finally:
         conn.close()
 
+    # Story 2.5 (Task 1): per-segment acoustic evidence, keyed by segment_id
+    # (AcousticEvidence.segment_id is a 1:1 FK onto TimelineSegment, AD-3) —
+    # joined in Python since db.get_acoustic_evidence_for_call (Story 2.4)
+    # already reads every AcousticEvidence row for this Call in one query.
+    acoustic_by_segment = {row["segment_id"]: row for row in acoustic_rows}
+
     result_segments = []
     for segment in segments:
         low_confidence_flag, flag_reason = _low_confidence_flag(segment["fused_confidence"])
+        acoustic = acoustic_by_segment.get(segment["id"])
         result_segments.append(
             {
                 "segment_id": segment["id"],
@@ -223,10 +365,21 @@ def get_timeline(call_id: str) -> dict:
                 "disagreement_flag": bool(segment["disagreement_flag"]),
                 "low_confidence_flag": low_confidence_flag,
                 "flag_reason": flag_reason,
-                # acoustic_emotion/acoustic_confidence are read (SELECT *)
-                # but deliberately not returned here — the acoustic-evidence
-                # drill-down (FR-13) is Epic 2 territory, out of this
-                # story's scope (see Dev Notes' "What NOT to build").
+                # Story 2.5 (Task 1; FR-13, AD-10): the tone-signal half of
+                # the Dual-signal panel — already read via SELECT * on
+                # TimelineSegment, now returned instead of dropped.
+                "acoustic_emotion": segment["acoustic_emotion"],
+                "acoustic_confidence": segment["acoustic_confidence"],
+                # Story 2.5 (Task 1; AC7): per-segment acoustic evidence for
+                # the Acoustic panel's selection-driven highlight mode. Every
+                # TimelineSegment gets exactly one AcousticEvidence row under
+                # normal operation (AD-3) — `acoustic` is None only in the
+                # defensive, should-not-occur case, in which case every
+                # field below is None rather than raising.
+                "pitch_mean_hz": acoustic["pitch_mean_hz"] if acoustic else None,
+                "energy_rms_mean": acoustic["energy_rms_mean"] if acoustic else None,
+                "speaking_rate_estimate": acoustic["speaking_rate_estimate"] if acoustic else None,
+                "pause_ratio": acoustic["pause_ratio"] if acoustic else None,
             }
         )
 
@@ -234,6 +387,147 @@ def get_timeline(call_id: str) -> dict:
         "call_id": call_id,
         "status": call["status"],
         "segments": result_segments,
+    }
+
+
+@router.get("/calls/{call_id}/transcript")
+def get_transcript(call_id: str) -> dict:
+    """Transcript retrieval (Story 2.4, Task 3; FR-12). Same read-only
+    404/409 gate as `get_timeline` above — a zero-turn complete Call (a
+    "no speech detected" Call, or one whose transcript branch never
+    completed — Story 1.4/1.5's single-modality path) returns `200` with
+    `"turns": []`, a valid result, not an error, same precedent as
+    `get_timeline`'s zero-segment case.
+
+    Returns every `TranscriptTurn` column this story's UI needs plus the
+    three text-signal fields (`text_sentiment`/`text_emotion`/
+    `text_confidence`) even though this story's own transcript panel only
+    renders `text`/timestamps — so Story 2.5's dual-signal panel does not
+    need a second backend change to this same endpoint. Deliberately
+    excluded: `text_keywords` and any `TranscriptWord` data (no consumer in
+    this story or Story 2.5's stated AC list).
+
+    Story 3.1 (AD-2): also returns `speaker_label` — the canonical
+    "Speaker A"/"Speaker B" value populated for stereo Calls, `null` for
+    mono/unattributed turns (Story 2.5's `SpeakerLabel` component already
+    consumes exactly this shape). `speaker_channel_index` is deliberately
+    never returned here — internal provenance only, never the display-facing
+    value (AC3).
+
+    Story 3.3 (AC1-AC7, AD-6, AD-10) adds two derived states, computed at
+    read time from columns Story 3.2 already persists — neither is
+    persisted as its own DB column (same "pure function of an already-
+    stored column" rationale as `_low_confidence_flag`): per-turn
+    `speaker_uncertain` (`_speaker_uncertain_flag` on `speaker_confidence`,
+    always `False` when `speaker_confidence` is `null`) and the Call-level
+    `speaker_attribution_unavailable` (`true` only for a mono Call,
+    `channel_count == 1`, where every turn's `speaker_label` is `null` — a
+    stereo Call or a Call with at least one attributed turn is always
+    `false`). The two states are structurally distinct fields, never
+    conflated (AC3): the former is per-turn, the latter is a top-level,
+    Call-wide fact.
+    """
+    conn = db.get_connection()
+    try:
+        try:
+            call = db.get_call(conn, call_id=call_id)
+        except sqlite3.Error as exc:
+            raise errors.internal_error(str(exc)) from exc
+
+        if call is None:
+            raise errors.call_not_found(call_id)
+        if call["status"] != "complete":
+            raise errors.call_not_complete(call_id, call["status"], resource="The transcript")
+
+        try:
+            turns = db.get_transcript_turns(conn, call_id=call_id)
+        except sqlite3.Error as exc:
+            raise errors.internal_error(str(exc)) from exc
+    finally:
+        conn.close()
+
+    speaker_attribution_unavailable = _speaker_attribution_unavailable_flag(call["channel_count"], turns)
+
+    return {
+        "call_id": call_id,
+        "status": call["status"],
+        "speaker_attribution_unavailable": speaker_attribution_unavailable,
+        "turns": [
+            {
+                "turn_id": turn["id"],
+                "turn_index": turn["turn_index"],
+                "start_time": turn["start_time"],
+                "end_time": turn["end_time"],
+                "text": turn["text"],
+                "text_sentiment": turn["text_sentiment"],
+                "text_emotion": turn["text_emotion"],
+                "text_confidence": turn["text_confidence"],
+                "speaker_label": turn["speaker_label"],
+                "speaker_uncertain": _speaker_uncertain_flag(turn["speaker_confidence"]),
+            }
+            for turn in turns
+        ],
+    }
+
+
+@router.get("/calls/{call_id}/acoustic-summary")
+def get_acoustic_summary(call_id: str) -> dict:
+    """Call-level acoustic aggregate retrieval (Story 2.4, Task 4; FR-12).
+    Same read-only 404/409 gate as `get_timeline`/`get_transcript` above.
+
+    Plain call-level averages only — no narrative text, no per-segment
+    anchoring/highlighting, no "vs. baseline" comparison (Story 2.5's
+    evidence drill-down, FR-13, owns all of that).
+
+    Every field is averaged only over rows where it is not `NULL` — a
+    segment can be entirely unvoiced (`ml-service/app/pipeline/acoustic/
+    features.py`'s documented nullable case for `pitch_mean_hz`), and while
+    `energy_rms_mean`/`speaking_rate_estimate`/`pause_ratio` are populated
+    on every row the current pipeline writes, the schema itself does not
+    enforce `NOT NULL` on any of the four columns — filtering `None`
+    defensively for all of them (code review, 2026-08-15) avoids an
+    unhandled `TypeError` from `sum()` if that ever changes, and matches
+    `pitch_mean_hz`'s own already-defensive handling instead of trusting an
+    unenforced invariant. Treating a missing value as 0 would silently bias
+    the average low, same reasoning for every field. Zero rows (a "no
+    speech detected" Call, or — should not occur under normal operation —
+    a segment with no matching AcousticEvidence row) returns every field as
+    `null` with `segment_count: 0`, not an error, same precedent as
+    `get_timeline`'s zero-segment case.
+    """
+    conn = db.get_connection()
+    try:
+        try:
+            call = db.get_call(conn, call_id=call_id)
+        except sqlite3.Error as exc:
+            raise errors.internal_error(str(exc)) from exc
+
+        if call is None:
+            raise errors.call_not_found(call_id)
+        if call["status"] != "complete":
+            raise errors.call_not_complete(call_id, call["status"], resource="Acoustic insights")
+
+        try:
+            rows = db.get_acoustic_evidence_for_call(conn, call_id=call_id)
+        except sqlite3.Error as exc:
+            raise errors.internal_error(str(exc)) from exc
+    finally:
+        conn.close()
+
+    segment_count = len(rows)
+
+    def _mean(field: str) -> float | None:
+        values = [row[field] for row in rows if row[field] is not None]
+        return sum(values) / len(values) if values else None
+
+    return {
+        "call_id": call_id,
+        "status": call["status"],
+        "segment_count": segment_count,
+        "pitch_mean_hz": _mean("pitch_mean_hz"),
+        "energy_rms_mean": _mean("energy_rms_mean"),
+        "speaking_rate_estimate": _mean("speaking_rate_estimate"),
+        "pause_ratio": _mean("pause_ratio"),
     }
 
 

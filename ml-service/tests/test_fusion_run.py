@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 import pytest
 
@@ -69,7 +70,20 @@ def _seed_transcript_turn(
         turn_id = str(uuid.uuid4())
         db.persist_transcript_turns(
             conn,
-            turns=[(turn_id, call_id, turn_index, start_time, end_time, "some turn text")],
+            turns=[
+                (
+                    turn_id,
+                    call_id,
+                    turn_index,
+                    start_time,
+                    end_time,
+                    "some turn text",
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            ],
             words=[],
         )
         conn.execute(
@@ -124,7 +138,12 @@ def test_run_fusion_multimodal_segment_persists_valid_output_and_completes_the_c
     assert result["secondary_signal_emotion"] == "disappointed"
     assert result["segments_flagged_count"] == 0
 
-    assert call_row(call_id)["status"] == "complete"
+    row = call_row(call_id)
+    assert row["status"] == "complete"
+    # Story 2.4 (Task 1): completed_at is set atomically with the status
+    # transition — a real, parseable ISO-8601 timestamp, not just non-null.
+    assert row["completed_at"] is not None
+    datetime.fromisoformat(row["completed_at"])
 
 
 def test_run_fusion_disagreeing_segment_sets_disagreement_flag_and_counts_it(
@@ -296,7 +315,13 @@ def test_run_fusion_zero_segments_completes_with_no_analysis_result(make_call, c
 
     run_fusion(call_id)  # must not raise
 
-    assert call_row(call_id)["status"] == "complete"
+    row = call_row(call_id)
+    assert row["status"] == "complete"
+    # Story 2.4 (Task 1): the zero-segment early-return path sets
+    # completed_at too — a "no speech detected" Call was still analyzed
+    # (the pipeline ran to completion), so it has a real completion time.
+    assert row["completed_at"] is not None
+    datetime.fromisoformat(row["completed_at"])
     conn = db.get_connection()
     try:
         result = db.get_analysis_result(conn, call_id=call_id)

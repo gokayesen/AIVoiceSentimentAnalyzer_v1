@@ -13,11 +13,10 @@ services:
     depends_on:
       - redis
 
-  # Placeholder — becomes functional in Story 2.1 (frontend build/serve pipeline).
+  # Functional as of Story 2.1 (frontend build/serve pipeline, AD-18).
   frontend:
     build:
       context: ./frontend
-    profiles: ["full"]
     ports:
       - "3000:3000"
 
@@ -35,6 +34,14 @@ services:
       - STORAGE_DIR=/storage
       - DB_PATH=/storage/app.db
       - REDIS_URL=redis://redis:6379/0
+      # Story 3.2 (AD-6): required for mono-path diarization (pyannote's
+      # Community-1 pipeline is HF-gated) — passthrough from the host/
+      # deployment environment, never hardcoded here. Defaults to empty
+      # (code review, 2026-08-17) so `docker compose` invocations by anyone
+      # not working on diarization don't print Compose's "variable is not
+      # set" warning; an empty/unset value degrades to a per-Call
+      # diarization failure (AD-1), never a compose-level error.
+      - HF_TOKEN=${HF_TOKEN:-}
     depends_on:
       - redis
     volumes:

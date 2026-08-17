@@ -128,3 +128,12 @@ if not ACOUSTIC_SANITY_FLOOR < LOW_CONFIDENCE_THRESHOLD:
     )
 if TEXT_SENTIMENT_TEMPERATURE <= 0:
     raise ValueError(f"TEXT_SENTIMENT_TEMPERATURE must be > 0, got {TEXT_SENTIMENT_TEMPERATURE}")
+
+# Story 3.2 (AD-6): pyannote's Community-1 diarization pipeline is HF-gated —
+# downloading its weights requires a Hugging Face access token for an account
+# that has accepted the model's usage conditions. No default: unset (None) is
+# valid at import time (unlike the thresholds above) because a missing/invalid
+# token must surface as this story's own per-Call diarization failure
+# (run_transcript's try/except around the whole diarization step), never a
+# whole-service startup crash.
+HF_TOKEN = os.environ.get("HF_TOKEN")

@@ -1,0 +1,84 @@
+/*
+ * Design tokens transcribed verbatim from DESIGN.md's YAML frontmatter
+ * (_bmad-output/planning-artifacts/ux-designs/ux-AIVoiceSentimentAnalyzer_v1-2026-08-10/DESIGN.md,
+ * lines 10-82). This is the single source of truth for every color,
+ * typography, spacing, and radius value in the app (Story 2.1 AC3 — no ad
+ * hoc values). Every component must reference these custom properties, never
+ * a bare hex/px value.
+ */
+
+:root {
+  /* Colors */
+  --color-bg: #f3f5f7;
+  --color-panel: #ffffff;
+  --color-panel-subtle: #f7f8f9;
+  --color-chrome: #0b0f14;
+  --color-chrome-secondary: #161c24;
+  --color-chrome-text: #b9c3cc;
+  --color-chrome-text-strong: #e7ecf1;
+  --color-border: #d8dee4;
+  --color-border-subtle: #eef1f3;
+  --color-text: #12181f;
+  --color-text-dim: #5b6672;
+  --color-text-faint: #6e7686;
+  --color-text-label: #5f6b77;
+  --color-negative: #c1352a;
+  --color-negative-bg: #fbe9e7;
+  --color-negative-border: #d89890;
+  --color-mixed: #96650c;
+  --color-positive: #23795a;
+  --color-neutral-signal: #7c8894;
+  --color-low-confidence: #aeb6be;
+  --color-low-confidence-border: #7c868f;
+  --color-low-confidence-hatch-a: #f2f4f6;
+  --color-low-confidence-hatch-b: #8a939c;
+  --color-focus-ring: #0b0f14;
+  --color-focus-ring-on-chrome: #e7ecf1;
+
+  /* Typography */
+  --font-family-ui:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  --font-body-size: 13px;
+  --font-body-line-height: 1.45;
+
+  --font-label-size: 11px;
+  --font-label-weight: 700;
+  --font-label-letter-spacing: 0.07em;
+
+  --font-heading-sm-size: 15px;
+  --font-heading-sm-weight: 700;
+
+  --font-heading-md-size: 20px;
+  --font-heading-md-weight: 700;
+
+  --font-data-size: 18px;
+  --font-data-weight: 600;
+
+  --font-data-sm-size: 11px;
+  --font-data-sm-weight: 600;
+
+  --font-data-inline-size: 11px;
+  --font-data-inline-weight: 400;
+
+  /* Radius */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-default: 3px;
+  --radius-full: 9999px;
+
+  /* Spacing (2px-based scale) */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+  --space-8: 18px;
+  --space-panel-padding: var(--space-8);
+  --space-row-padding: var(--space-5);
+}

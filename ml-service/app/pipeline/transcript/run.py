@@ -9,7 +9,10 @@ import uuid
 
 from app import db, queue
 from app.audio import load_mono_waveform
+from app.pipeline.ingest.channel import detect_channel_count
 from app.pipeline.ingest.vad import VAD_SAMPLE_RATE
+from app.pipeline.transcript.diarize import diarize_mono_turns
+from app.pipeline.transcript.speaker import assign_stereo_speaker
 from app.pipeline.transcript.stt import transcribe_segment
 
 logger = logging.getLogger(__name__)
@@ -35,16 +38,31 @@ def run_transcript(call_id: str) -> None:
         logger.info("transcript generation started", extra={"extra_fields": {"call_id": call_id}})
 
         segments = db.get_timeline_segments(conn, call_id=call_id)
-        _raw_waveform, mono_waveform, _sample_rate = load_mono_waveform(call_id)
+        raw_waveform, mono_waveform, sample_rate = load_mono_waveform(call_id)
         total_samples = mono_waveform.shape[-1]
         margin_samples = int(CONTEXT_MARGIN_SECONDS * VAD_SAMPLE_RATE)
+
+        # Story 3.1 (AD-2): reuse ingest's own channel-count detection on the
+        # same raw_waveform tensor run_ingest already derived Call.channel_count
+        # from, rather than adding a new ml-service/app/db.py Call-reader just
+        # to re-fetch a value already free to recompute here. Stereo
+        # channel-based attribution only ever runs for exactly 2 channels — a
+        # >2-channel Call is deliberately left unattributed (deferred-work.md,
+        # Story 1.2 review), same as mono, not guessed at.
+        channel_count = detect_channel_count(raw_waveform)
 
         # Compute every turn/word for the whole Call in memory first, write
         # once at the end — same atomicity discipline as run_acoustic
         # (Story 1.3 code review): no risk of some turns persisting while
         # later segments in the same Call were never reached.
-        turn_rows: list[tuple[str, str, int, float, float, str]] = []
+        turn_rows: list[
+            tuple[str, str, int, float, float, str, str | None, int | None, str | None, float | None]
+        ] = []
         word_rows: list[tuple[str, str, int, str, float, float, float]] = []
+        # Story 3.2: only populated (and only consumed) for mono Calls —
+        # diarize_mono_turns needs every turn for the whole Call at once
+        # (see below), unlike stereo's per-turn assign_stereo_speaker.
+        all_turns: list = []
         turn_index = 0
         for segment in segments:
             start_sample = int(segment["start_time"] * VAD_SAMPLE_RATE)
@@ -91,9 +109,60 @@ def run_transcript(call_id: str) -> None:
 
             for turn in turns:
                 turn_id = str(uuid.uuid4())
+
+                # Story 3.1 (AC1, AC4): only for stereo Calls — mono (and any
+                # >2-channel) Calls leave speaker_label/speaker_channel_index
+                # None for every turn, same as before this story.
+                speaker_label: str | None = None
+                speaker_channel_index: int | None = None
+                if channel_count == 2:
+                    # Code review (2026-08-17): isolated in its own try/except,
+                    # same "one item's failure doesn't discard the whole
+                    # Call's already-computed turns" philosophy as the
+                    # per-segment transcription try/except above — turns are
+                    # only persisted once, at the end, so an unguarded
+                    # exception here (e.g. a non-finite turn timestamp) would
+                    # otherwise propagate to this function's outer except and
+                    # silently drop every turn for the entire Call, not just
+                    # this one's attribution.
+                    try:
+                        attribution = assign_stereo_speaker(
+                            raw_waveform,
+                            sample_rate,
+                            start_time=turn.start_time,
+                            end_time=turn.end_time,
+                        )
+                    except Exception:
+                        logger.exception(
+                            "stereo speaker attribution failed for one turn, "
+                            "leaving it unattributed — transcript generation continues",
+                            extra={"extra_fields": {"call_id": call_id}},
+                        )
+                        attribution = None
+                    if attribution is not None:
+                        speaker_channel_index, speaker_label = attribution
+
                 turn_rows.append(
-                    (turn_id, call_id, turn_index, turn.start_time, turn.end_time, turn.text)
+                    (
+                        turn_id,
+                        call_id,
+                        turn_index,
+                        turn.start_time,
+                        turn.end_time,
+                        turn.text,
+                        speaker_label,
+                        speaker_channel_index,
+                        # Story 3.2: speaker_cluster_id/speaker_confidence —
+                        # left None here, patched in place below (after this
+                        # loop) for mono Calls only. Diarization needs every
+                        # turn for the whole Call at once, so it cannot run
+                        # inline per-turn like the stereo branch above.
+                        None,
+                        None,
+                    )
                 )
+                if channel_count == 1:
+                    all_turns.append(turn)
                 for word_index, word in enumerate(turn.words):
                     word_rows.append(
                         (
@@ -107,6 +176,29 @@ def run_transcript(call_id: str) -> None:
                         )
                     )
                 turn_index += 1
+
+        # Story 3.2 (AC1, AC3, AC6): mono Calls only — diarization runs once
+        # for the whole Call (never per-VAD-segment, unlike stereo's
+        # per-turn assign_stereo_speaker above; see diarize.py's module
+        # docstring for why per-segment clustering would be unsound).
+        # all_turns and turn_rows were appended to at the same points in the
+        # same loop above, so they're guaranteed the same length/order here
+        # — no separate id-matching needed to patch results back in.
+        if channel_count == 1 and all_turns:
+            try:
+                diarization_results = diarize_mono_turns(mono_waveform, all_turns)
+            except Exception:
+                logger.exception(
+                    "mono diarization failed for this call, leaving every "
+                    "turn unattributed — transcript generation continues",
+                    extra={"extra_fields": {"call_id": call_id}},
+                )
+                diarization_results = [None] * len(all_turns)
+            for i, result in enumerate(diarization_results):
+                if result is not None:
+                    cluster_id, label, confidence = result
+                    row = turn_rows[i]
+                    turn_rows[i] = row[:6] + (label, None, cluster_id, confidence)
 
         db.persist_transcript_turns(conn, turns=turn_rows, words=word_rows)
 

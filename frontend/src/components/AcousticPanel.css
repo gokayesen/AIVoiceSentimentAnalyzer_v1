@@ -1,0 +1,33 @@
+.acoustic-panel {
+  padding: var(--space-3) var(--space-8) var(--space-7);
+}
+
+.acoustic-panel__metric {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.acoustic-panel__metric:last-child {
+  border-bottom: none;
+}
+
+.acoustic-panel__label {
+  font-size: var(--font-body-size);
+  color: var(--color-text-dim);
+}
+
+.acoustic-panel__value {
+  font-family: var(--font-family-mono);
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.acoustic-panel__anchor {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+  margin: var(--space-3) 0 0;
+}

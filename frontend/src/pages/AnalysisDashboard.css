@@ -1,0 +1,159 @@
+.analysis-dashboard--loading,
+.analysis-dashboard--error {
+  padding: var(--space-8);
+}
+
+.analysis-dashboard__error-message {
+  color: var(--color-negative);
+  margin: 0 0 var(--space-2);
+}
+
+.analysis-dashboard__error-next-step {
+  color: var(--color-text-faint);
+  margin: 0 0 var(--space-5);
+}
+
+.analysis-dashboard__back-button {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-body-size);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* Story 2.7 (Task 1; AC1): the one element in the app that was still
+   falling back to the browser-default outline instead of the app's own
+   focus-ring — same treatment every other button already uses. */
+.analysis-dashboard__back-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.analysis-dashboard__case-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-panel);
+}
+
+.analysis-dashboard__filename {
+  margin: 0;
+  font-size: var(--font-heading-sm-size);
+  font-weight: var(--font-heading-sm-weight);
+  color: var(--color-text);
+}
+
+.analysis-dashboard__meta {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-dim);
+}
+
+.analysis-dashboard__no-speech {
+  padding: var(--space-8);
+  color: var(--color-text-faint);
+}
+
+.analysis-dashboard__summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.analysis-dashboard__summary-cell {
+  background: var(--color-panel);
+  padding: var(--space-5) var(--space-7);
+}
+
+.analysis-dashboard__cell-label {
+  font-size: var(--font-label-size);
+  text-transform: uppercase;
+  letter-spacing: var(--font-label-letter-spacing);
+  color: var(--color-text-label);
+  font-weight: var(--font-label-weight);
+}
+
+.analysis-dashboard__cell-value {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-data-size);
+  font-weight: var(--font-data-weight);
+  margin-top: var(--space-1);
+  color: var(--color-text);
+}
+
+.analysis-dashboard__cell-value a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.analysis-dashboard__cell-value a:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.analysis-dashboard__cell-sub {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+  margin-top: var(--space-1);
+}
+
+.analysis-dashboard__section-label {
+  font-size: var(--font-label-size);
+  text-transform: uppercase;
+  letter-spacing: var(--font-label-letter-spacing);
+  color: var(--color-text-label);
+  font-weight: var(--font-label-weight);
+  padding: var(--space-5) var(--space-8) var(--space-2);
+}
+
+.analysis-dashboard__main-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  border-top: 1px solid var(--color-border);
+}
+
+.analysis-dashboard__main-grid > div:first-child {
+  border-right: 1px solid var(--color-border);
+}
+
+/* Story 2.7 (Task 7; AC4-AC7): below ~960px the two-column grid stacks to a
+   single column, transcript first (already first in source order — no JSX
+   change needed) — narrower-desktop-window fallback only, not a dedicated
+   mobile/touch layout (EXPERIENCE.md Responsive & Platform). */
+@media (max-width: 960px) {
+  .analysis-dashboard__main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-dashboard__main-grid > div:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .analysis-dashboard__summary-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.analysis-dashboard__panel-unavailable {
+  padding: var(--space-5) var(--space-8);
+  color: var(--color-text-faint);
+}
+
+/* Story 2.6 (Task 3/4): shared "missing signal, stated plainly" treatment
+   for the single-modality and mono-input notes — a real fact about the
+   Call, never styled as an error (DESIGN.md Colors: mixed-colored inline
+   warning, same category as the Call row's own mono-input note). */
+.analysis-dashboard__signal-note {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-mixed);
+  margin: var(--space-2) var(--space-8);
+}

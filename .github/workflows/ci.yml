@@ -27,6 +27,33 @@ jobs:
       - name: Test (pytest)
         run: pytest
 
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: Test (vitest)
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
   ml-service:
     # NOTE: below, the ml-service job installs system ffmpeg — torchaudio.load()
     # delegates to TorchCodec, which requires FFmpeg's shared libraries at

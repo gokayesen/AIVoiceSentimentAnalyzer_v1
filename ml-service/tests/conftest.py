@@ -122,6 +122,43 @@ def fixtures_dir(ffmpeg_exe: str) -> Path:
     _encode("mono.wav", 3, 1)
     _encode("stereo.wav", 3, 2)
 
+    def _encode_channel_dominant(name: str, duration_s: int, *, loud_channel: int) -> Path:
+        """Story 3.1: unlike `stereo.wav` above (identical sine tone
+        duplicated onto both channels via `-ac 2` — every per-channel energy
+        comparison on it is a tie, useless for proving correct channel
+        selection), this produces a genuinely asymmetric stereo file: a
+        full-amplitude tone on `loud_channel` (0 or 1), silence on the
+        other — via ffmpeg's `join` filter, which places each input stream
+        onto its own output channel in argument order."""
+        out = d / name
+        tone = f"sine=frequency=440:duration={duration_s}"
+        silence = f"anullsrc=r=16000:cl=mono:d={duration_s}"
+        inputs = [tone, silence] if loud_channel == 0 else [silence, tone]
+        cmd = [
+            ffmpeg_exe,
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            inputs[0],
+            "-f",
+            "lavfi",
+            "-i",
+            inputs[1],
+            "-filter_complex",
+            "[0:a][1:a]join=inputs=2:channel_layout=stereo[a]",
+            "-map",
+            "[a]",
+            "-ar",
+            "16000",
+            str(out),
+        ]
+        subprocess.run(cmd, check=True, capture_output=True)
+        return out
+
+    _encode_channel_dominant("stereo_channel0_louder.wav", 3, loud_channel=0)
+    _encode_channel_dominant("stereo_channel1_louder.wav", 3, loud_channel=1)
+
     def _encode_silence(name: str, duration_s: int) -> Path:
         out = d / name
         cmd = [

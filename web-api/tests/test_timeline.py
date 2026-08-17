@@ -53,6 +53,8 @@ def _seed_segment(
     fused_confidence: float | None = 0.75,
     single_modality_flag: int = 0,
     disagreement_flag: int = 0,
+    acoustic_emotion: str | None = None,
+    acoustic_confidence: float | None = None,
 ) -> str:
     segment_id = str(uuid.uuid4())
     conn = db.get_connection()
@@ -62,8 +64,9 @@ def _seed_segment(
             INSERT INTO TimelineSegment
                 (id, call_id, segment_index, start_time, end_time,
                  fused_sentiment, fused_emotion, fused_confidence,
-                 single_modality_flag, disagreement_flag)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 single_modality_flag, disagreement_flag,
+                 acoustic_emotion, acoustic_confidence)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 segment_id,
@@ -76,12 +79,38 @@ def _seed_segment(
                 fused_confidence,
                 single_modality_flag,
                 disagreement_flag,
+                acoustic_emotion,
+                acoustic_confidence,
             ),
         )
         conn.commit()
     finally:
         conn.close()
     return segment_id
+
+
+def _seed_acoustic_evidence(
+    *,
+    segment_id: str,
+    pitch_mean_hz: float | None = 180.0,
+    energy_rms_mean: float | None = 0.05,
+    speaking_rate_estimate: float | None = 3.2,
+    pause_ratio: float | None = 0.2,
+) -> None:
+    conn = db.get_connection()
+    try:
+        conn.execute(
+            """
+            INSERT INTO AcousticEvidence
+                (segment_id, pitch_mean_hz, energy_rms_mean,
+                 speaking_rate_estimate, pause_ratio)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (segment_id, pitch_mean_hz, energy_rms_mean, speaking_rate_estimate, pause_ratio),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def test_complete_call_returns_multimodal_and_single_modality_segments(client):
@@ -254,6 +283,57 @@ def test_segments_are_returned_in_chronological_order_regardless_of_insertion_or
 
     segment_ids = [s["segment_id"] for s in resp.json()["segments"]]
     assert segment_ids == [seg_first, seg_second, seg_third]
+
+
+def test_acoustic_and_tone_signal_fields_round_trip(client):
+    """Story 2.5 Task 1: acoustic_emotion/acoustic_confidence (already read
+    via SELECT * but previously excluded from the response) plus the four
+    per-segment AcousticEvidence fields are now returned, joined by
+    segment_id."""
+    call_id = _make_call(status="complete")
+    seg_id = _seed_segment(
+        call_id=call_id,
+        segment_index=0,
+        start_time=0.0,
+        end_time=2.0,
+        acoustic_emotion="frustration",
+        acoustic_confidence=0.71,
+    )
+    _seed_acoustic_evidence(
+        segment_id=seg_id,
+        pitch_mean_hz=210.5,
+        energy_rms_mean=0.061,
+        speaking_rate_estimate=4.1,
+        pause_ratio=0.15,
+    )
+
+    resp = client.get(f"/calls/{call_id}/timeline")
+
+    segment = resp.json()["segments"][0]
+    assert segment["acoustic_emotion"] == "frustration"
+    assert segment["acoustic_confidence"] == 0.71
+    assert segment["pitch_mean_hz"] == 210.5
+    assert segment["energy_rms_mean"] == 0.061
+    assert segment["speaking_rate_estimate"] == 4.1
+    assert segment["pause_ratio"] == 0.15
+
+
+def test_segment_with_no_matching_acoustic_evidence_returns_null_fields(client):
+    """Story 2.5 Task 1: should not occur under normal operation (AD-3), but
+    a segment with no AcousticEvidence row must return null for all four
+    fields, not raise."""
+    call_id = _make_call(status="complete")
+    _seed_segment(call_id=call_id, segment_index=0, start_time=0.0, end_time=2.0)
+
+    resp = client.get(f"/calls/{call_id}/timeline")
+
+    segment = resp.json()["segments"][0]
+    assert segment["pitch_mean_hz"] is None
+    assert segment["energy_rms_mean"] is None
+    assert segment["speaking_rate_estimate"] is None
+    assert segment["pause_ratio"] is None
+    assert segment["acoustic_emotion"] is None
+    assert segment["acoustic_confidence"] is None
 
 
 def test_nonexistent_call_returns_404(client):

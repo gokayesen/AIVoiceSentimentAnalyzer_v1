@@ -1,0 +1,86 @@
+.timeline__track {
+  display: flex;
+  /* Story 2.7 (Task 6; AC3): min-height, not a hard height — the per-segment
+     glyph is scaled text living inside this overflow:hidden container; at
+     200% OS-level text scaling a hard cap would clip it. */
+  min-height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.timeline__segment {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  border-right: 1px solid var(--color-panel);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.timeline__segment:last-child {
+  border-right: none;
+}
+
+.timeline__segment:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Code review (2026-08-16): a persistent, non-focus-stealing indicator for
+   selection driven from outside Timeline (TranscriptPanel, Segments Flagged
+   link) — same ring treatment as :focus-visible above, applied via class so
+   it doesn't require moving DOM focus here. */
+.timeline__segment--selected {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Story 2.5 (Task 3): hatch pattern + dashed border, never confusable with
+   a "Neutral" reading (FR-14) — gradient/border values transcribed 1:1 from
+   mockups/analysis-dashboard.html's .seg.lowconf. */
+.timeline__segment--low-confidence {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-low-confidence-hatch-a),
+    var(--color-low-confidence-hatch-a) 4px,
+    var(--color-low-confidence-hatch-b) 4px,
+    var(--color-low-confidence-hatch-b) 5px,
+    var(--color-low-confidence-hatch-a) 5px,
+    var(--color-low-confidence-hatch-a) 9px
+  );
+  border-left: 1px dashed var(--color-low-confidence-border);
+  border-right: 1px dashed var(--color-low-confidence-border);
+}
+
+/* Story 2.5 (Task 3): split-fill, matching mockup's .seg.disagree. */
+.timeline__segment--disagreement {
+  background: linear-gradient(90deg, var(--color-neutral-signal) 50%, var(--color-negative) 50%);
+}
+
+.timeline__glyph {
+  margin-top: var(--space-1);
+  font-size: var(--font-data-inline-size);
+  font-weight: 700;
+  /* Default: white, correct for positive/mixed/negative/disagreement
+     (saturated fill). Neutral overrides to --color-text below — Story 2.4
+     hardcoded this to white for every variant, which was wrong for neutral
+     per DESIGN.md (foreground {colors.text}); fixed here. */
+  color: var(--color-panel);
+}
+
+.timeline__glyph--neutral {
+  color: var(--color-text);
+}
+
+/* Story 2.5 (Task 3): mockup's #5B6672 is --color-text-dim's exact hex —
+   not --color-low-confidence-border, which DESIGN.md reserves for
+   line-art/borders, not fill/text. */
+.timeline__glyph--low-confidence {
+  color: var(--color-text-dim);
+}
+
+.timeline__empty {
+  font-size: var(--font-body-size);
+  color: var(--color-text-faint);
+}

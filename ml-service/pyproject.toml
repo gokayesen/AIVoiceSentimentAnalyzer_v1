@@ -17,6 +17,14 @@ dependencies = [
     "transformers==5.14.1",
     "librosa==0.11.0",
     "faster-whisper==1.2.1",
+    # Story 3.2 (AD-6): mono-path diarization, called directly rather than
+    # through the `whisperx` package — verified at implementation time that
+    # no whisperx release supports pyannote.audio>=4.0 (Community-1) while
+    # also being compatible with this project's pinned torch==2.13.0 (every
+    # whisperx version that added Community-1 support also tightened its own
+    # pin to torch~=2.8.0). See ml-service/app/pipeline/transcript/diarize.py
+    # module docstring and the story's Dev Notes for the full rationale.
+    "pyannote.audio==4.0.7",
     # Story 1.5 (AD-19): unsupervised statistical keyword extraction, no
     # model weights, no LLM — see app/pipeline/transcript/keywords.py.
     "yake>=0.6,<0.7",

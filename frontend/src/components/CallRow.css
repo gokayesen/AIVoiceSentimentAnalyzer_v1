@@ -1,0 +1,196 @@
+.call-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.call-row--complete {
+  cursor: pointer;
+}
+
+.call-row--complete:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Non-interactive by design (code review, 2026-08-15 — previously applied
+   with no rule at all): explicit, not just the browser default, so a
+   pending row never looks accidentally clickable next to a complete one. */
+.call-row--pending {
+  cursor: default;
+}
+
+.call-row__main {
+  min-width: 0;
+}
+
+.call-row__filename {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-data-sm-size);
+  font-weight: var(--font-data-sm-weight);
+  color: var(--color-text);
+}
+
+.call-row__status {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+}
+
+.call-row__sentiment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-dim);
+  margin-top: var(--space-1);
+}
+
+.call-row__badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.call-row__badge-dot--negative {
+  background: var(--color-negative);
+}
+
+.call-row__badge-dot--mixed {
+  background: var(--color-mixed);
+}
+
+.call-row__badge-dot--positive {
+  background: var(--color-positive);
+}
+
+.call-row__badge-dot--neutral {
+  background: var(--color-neutral-signal);
+}
+
+/* Story 3.4 (AC4): DESIGN.md components.call-row — "a small `mixed`-colored
+   inline warning", same token AnalysisDashboard.css's own
+   `.analysis-dashboard__signal-note` uses for the identical fact on the
+   Dashboard side. */
+.call-row__attribution-warning {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-mixed);
+  margin-top: var(--space-1);
+}
+
+.call-row__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-data-inline-size);
+  font-weight: var(--font-data-inline-weight);
+  color: var(--color-text-faint);
+}
+
+.call-row--failed {
+  background: var(--color-negative-bg);
+}
+
+.call-row__error-message {
+  font-size: var(--font-body-size);
+  color: var(--color-negative);
+  margin-top: var(--space-1);
+}
+
+.call-row__error-next-step {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+  margin-top: var(--space-1);
+}
+
+.call-row__retry {
+  background: transparent;
+  border: 1px solid var(--color-negative-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-negative);
+  font-size: var(--font-label-size);
+  font-weight: var(--font-label-weight);
+  letter-spacing: var(--font-label-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.call-row__retry:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Story 2.3 (AC1): hover/focus-revealed delete affordance, hidden otherwise
+   so the dense list stays quiet by default (DESIGN.md components.icon-button). */
+.call-row__icon-button {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.call-row__icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.call-row:hover .call-row__icon-button,
+.call-row:focus-within .call-row__icon-button {
+  opacity: 1;
+  background: var(--color-panel-subtle);
+}
+
+/* Story 2.7 (Task 7; AC6 — also closes deferred-work.md's Story 2.3 review
+   "no always-visible fallback for touch/narrow viewports" item): below
+   ~960px there's no reliable hover, so the delete affordance must not
+   depend on it. The :hover/:focus-within rules above become harmless
+   no-ops here since opacity is already 1. */
+@media (max-width: 960px) {
+  .call-row__icon-button {
+    opacity: 1;
+  }
+}
+
+/* DESIGN.md components.icon-button.foreground-destructive-hover: the
+   destructive-hover color applies specifically to this delete action, not
+   the plain generic-hover color a non-destructive icon-button would use. */
+.call-row__icon-button:hover {
+  color: var(--color-negative);
+}
+
+.call-row__icon-button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.call-row__delete-error {
+  margin-top: var(--space-1);
+}
+
+.call-row__delete-error-message {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-negative);
+}
+
+.call-row__delete-error-next-step {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+}

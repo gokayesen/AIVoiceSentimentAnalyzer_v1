@@ -40,6 +40,24 @@ if not 0 <= LOW_CONFIDENCE_THRESHOLD <= 1:
         f"LOW_CONFIDENCE_THRESHOLD must be in [0, 1], got {LOW_CONFIDENCE_THRESHOLD}"
     )
 
+# Story 3.3 (AC6, AD-10): a `TranscriptTurn.speaker_confidence` (Story 3.2)
+# below this value is marked speaker_uncertain in the transcript response.
+# Deliberately a separate variable from LOW_CONFIDENCE_THRESHOLD above — AD-10
+# requires the speaker-attribution confidence axis to stay independently
+# configured from the Sentiment/Emotion one, never conflated, even at the
+# threshold-tuning level.
+_speaker_uncertain_threshold_raw = os.environ.get("SPEAKER_UNCERTAIN_THRESHOLD", "0.5")
+try:
+    SPEAKER_UNCERTAIN_THRESHOLD = float(_speaker_uncertain_threshold_raw)
+except ValueError as exc:
+    raise ValueError(
+        f"SPEAKER_UNCERTAIN_THRESHOLD must be a float, got {_speaker_uncertain_threshold_raw!r}"
+    ) from exc
+if not 0 <= SPEAKER_UNCERTAIN_THRESHOLD <= 1:
+    raise ValueError(
+        f"SPEAKER_UNCERTAIN_THRESHOLD must be in [0, 1], got {SPEAKER_UNCERTAIN_THRESHOLD}"
+    )
+
 # Story 1.10 (AD-12): bound how long DELETE /calls/{call_id} will wait for an
 # in-flight ("processing") job to finish before giving up and returning 409 —
 # an operational timing parameter, not a fourth tunable domain threshold

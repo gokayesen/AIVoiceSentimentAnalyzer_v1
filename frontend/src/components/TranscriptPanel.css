@@ -1,0 +1,84 @@
+.transcript-panel__turn {
+  padding: var(--space-2) var(--space-8);
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  gap: var(--space-4);
+  border-left: 2px solid transparent;
+}
+
+.transcript-panel__turn[role='button'] {
+  cursor: pointer;
+}
+
+.transcript-panel__turn[role='button']:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Story 2.5 (Task 4): matches mockup's .turn.lowconf exactly. */
+.transcript-panel__turn--low-confidence {
+  background: var(--color-panel-subtle);
+  border-left: 2px dashed var(--color-low-confidence-border);
+}
+
+/* Story 2.5 (Task 4): matches mockup's .turn.disagree exactly. */
+.transcript-panel__turn--disagreement {
+  border-left: 2px solid var(--color-negative);
+}
+
+.transcript-panel__time {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+  /* Story 2.7 (Task 6; AC3): min-width, not a hard width — lets the
+     timestamp grow instead of clipping under 200% OS-level text scaling. */
+  min-width: 42px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.transcript-panel__body {
+  flex: 1;
+}
+
+.transcript-panel__text {
+  font-size: var(--font-body-size);
+  line-height: var(--font-body-line-height);
+}
+
+.transcript-panel__reason {
+  display: block;
+  font-size: var(--font-data-inline-size);
+  color: var(--color-text-faint);
+  margin-top: var(--space-1);
+  line-height: var(--font-body-line-height);
+}
+
+.transcript-panel__empty {
+  font-size: var(--font-body-size);
+  color: var(--color-text-faint);
+  padding: var(--space-5) var(--space-8);
+}
+
+/* Story 2.5 (Task 4): tag/tag--low/tag--conflict, matching mockup exactly. */
+.tag {
+  display: inline-block;
+  font-size: var(--font-data-inline-size);
+  font-family: var(--font-family-mono);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-md);
+  margin-left: var(--space-2);
+  vertical-align: 1px;
+}
+
+.tag--low {
+  background: var(--color-low-confidence-hatch-a);
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-low-confidence-border);
+}
+
+.tag--conflict {
+  background: var(--color-negative-bg);
+  color: var(--color-negative);
+  border: 1px solid var(--color-negative-border);
+}

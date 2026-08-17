@@ -34,6 +34,18 @@ RUN python -c "from faster_whisper import WhisperModel; WhisperModel('base', dev
 # build time too, same rationale as the SER/STT pre-fetches above.
 RUN python -c "from transformers import AutoModelForSequenceClassification, AutoTokenizer; m = 'SamLowe/roberta-base-go_emotions'; AutoModelForSequenceClassification.from_pretrained(m); AutoTokenizer.from_pretrained(m)"
 
+# Story 3.2: deliberately NOT pre-fetched here, unlike the three models
+# above. pyannote's Community-1 diarization pipeline is HF-gated — unlike
+# those three public models, downloading it requires a valid, license-
+# accepted HF_TOKEN. Baking a pre-fetch into the image build would make
+# `docker build` itself fail for anyone without one, breaking the build for
+# every contributor/CI run lacking a personal gated-model token, not just
+# degrading a runtime feature. Loaded lazily instead, at first mono-Call job
+# execution (ml-service/app/pipeline/transcript/diarize.py's
+# _get_diarize_pipeline) — a missing/invalid HF_TOKEN there degrades to a
+# per-Call diarization failure (AD-1), never a build-time or worker-startup
+# failure.
+
 # Same baked-in-defaults rationale as web-api/Dockerfile: correct regardless
 # of how the image is launched, not just under docker-compose.
 ENV STORAGE_DIR=/storage

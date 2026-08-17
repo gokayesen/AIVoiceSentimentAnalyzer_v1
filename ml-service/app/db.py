@@ -10,6 +10,8 @@ and column names) with web-api's definition by hand, not by import.
 added in Story 1.3. `TranscriptTurn`/`TranscriptWord` were added in Story 1.4.
 Story 1.5 added `TranscriptTurn.text_*` columns. Story 1.6 added
 `TimelineSegment.fused_*`/`*_flag` columns and the `AnalysisResult` table.
+Story 3.1 added `TranscriptTurn.speaker_label`/`speaker_channel_index`. Story
+3.2 added `TranscriptTurn.speaker_cluster_id`/`speaker_confidence`.
 """
 
 from __future__ import annotations
@@ -67,6 +69,12 @@ class AnalysisResultRow(NamedTuple):
 # Mirrors web-api/app/db.py's Call DDL exactly, plus the channel_count column
 # this story adds (nullable: only ingest, running here, knows the value —
 # web-api's insert_call() at upload time does not).
+#
+# Story 2.4 adds `completed_at` (nullable): set only at the moment
+# `status` transitions to "complete" (both call sites: the zero-segment
+# early-return and `persist_fusion_results` below) so the Analysis
+# Dashboard can render "analyzed N ago". Never set for "processing"/
+# "failed" transitions.
 _CREATE_CALL_TABLE = """
 CREATE TABLE IF NOT EXISTS Call (
     id TEXT PRIMARY KEY,
@@ -76,7 +84,8 @@ CREATE TABLE IF NOT EXISTS Call (
     duration_seconds REAL NOT NULL,
     size_bytes INTEGER NOT NULL,
     created_at TEXT NOT NULL,
-    channel_count INTEGER
+    channel_count INTEGER,
+    completed_at TEXT
 );
 """
 
@@ -168,6 +177,24 @@ CREATE TABLE IF NOT EXISTS AcousticEvidence (
 # stored copy. text_keywords is a JSON-encoded array of strings (the first
 # JSON column in this schema); use `json.dumps`/`json.loads`, no new
 # dependency.
+# Story 3.1 (AD-2): speaker_label/speaker_channel_index are the stereo
+# channel-based attribution filter's output — speaker_label is the canonical
+# display value ("Speaker A"/"Speaker B"), speaker_channel_index is internal
+# provenance only (the raw channel index the label was derived from), never
+# itself returned by any API endpoint. speaker_channel_index is NULL for mono
+# Calls. speaker_label is NULL for any Call neither attribution filter ran
+# against (or produced no result for).
+# Story 3.2 (AD-6): speaker_cluster_id/speaker_confidence are the mono
+# diarization filter's output — speaker_cluster_id is speaker_channel_index's
+# mono-path counterpart (internal provenance only, the raw pyannote.audio
+# cluster id, e.g. "SPEAKER_00", never itself returned by any API endpoint),
+# NULL for stereo Calls. speaker_confidence is the per-turn diarization
+# confidence (AD-6/AD-10) — always NULL for stereo-attributed turns
+# (deterministic channel-based attribution carries no confidence value,
+# Story 3.1 AC5, not reopened here) and NULL for any mono turn diarization
+# didn't attribute. speaker_label is shared by both paths (AD-2's "consistent
+# value shape" requirement) — populated by whichever filter ran for that
+# Call's channel_count.
 _CREATE_TRANSCRIPT_TURN_TABLE = """
 CREATE TABLE IF NOT EXISTS TranscriptTurn (
     id TEXT PRIMARY KEY,
@@ -179,7 +206,11 @@ CREATE TABLE IF NOT EXISTS TranscriptTurn (
     text_sentiment TEXT,
     text_emotion TEXT,
     text_confidence REAL,
-    text_keywords TEXT
+    text_keywords TEXT,
+    speaker_label TEXT,
+    speaker_channel_index INTEGER,
+    speaker_cluster_id TEXT,
+    speaker_confidence REAL
 );
 """
 
@@ -226,10 +257,25 @@ def init_db(db_path: Path = DB_PATH) -> None:
         conn.close()
 
 
-def set_call_status(conn: sqlite3.Connection, *, call_id: str, status: str) -> None:
+def set_call_status(
+    conn: sqlite3.Connection, *, call_id: str, status: str, completed_at: str | None = None
+) -> None:
     """The only writer of Call.status transitions beyond the initial `queued`
-    insert (AD-13) — web-api must never call this."""
-    conn.execute("UPDATE Call SET status = ? WHERE id = ?", (status, call_id))
+    insert (AD-13) — web-api must never call this.
+
+    Story 2.4: `completed_at` is optional and defaults to `None` — every
+    existing `"processing"`/`"failed"` call site (`fusion/run.py`'s failure
+    path, `acoustic/run.py`, `ingest/run.py`) omits it and is unaffected,
+    since a Call that isn't `"complete"` has no completion time to record.
+    Only the zero-segment "no speech detected" early-return in
+    `fusion/run.py` passes it explicitly."""
+    if completed_at is not None:
+        conn.execute(
+            "UPDATE Call SET status = ?, completed_at = ? WHERE id = ?",
+            (status, completed_at, call_id),
+        )
+    else:
+        conn.execute("UPDATE Call SET status = ? WHERE id = ?", (status, call_id))
     conn.commit()
 
 
@@ -306,7 +352,9 @@ def persist_acoustic_results(
 def persist_transcript_turns(
     conn: sqlite3.Connection,
     *,
-    turns: list[tuple[str, str, int, float, float, str]],
+    turns: list[
+        tuple[str, str, int, float, float, str, str | None, int | None, str | None, float | None]
+    ],
     words: list[tuple[str, str, int, str, float, float, float]],
 ) -> None:
     """Writes both `TranscriptTurn` rows and their `TranscriptWord` children
@@ -316,15 +364,24 @@ def persist_transcript_turns(
     calling this once, so there is no risk of turns persisting without their
     words or vice versa.
 
-    `turns` is a list of (id, call_id, turn_index, start_time, end_time, text)
-    tuples, already ordered by turn_index — this function does not sort.
+    `turns` is a list of (id, call_id, turn_index, start_time, end_time, text,
+    speaker_label, speaker_channel_index, speaker_cluster_id,
+    speaker_confidence) tuples, already ordered by turn_index — this function
+    does not sort. `speaker_label`/`speaker_channel_index` (Story 3.1, AD-2)
+    are `None` for any turn the stereo channel-based attribution filter
+    didn't run against. `speaker_cluster_id`/`speaker_confidence` (Story 3.2,
+    AD-6) are `None` for any turn the mono diarization filter didn't run
+    against or didn't attribute — always `None` for stereo-attributed turns
+    (Story 3.1 AC5, deterministic attribution carries no confidence value).
     `words` is a list of (id, turn_id, word_index, word, start_time, end_time,
     probability) tuples covering all turns passed in `turns`. May be empty if
     `turns` is empty (nothing to write, still a no-op single "transaction")."""
     conn.executemany(
         """
-        INSERT INTO TranscriptTurn (id, call_id, turn_index, start_time, end_time, text)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO TranscriptTurn
+            (id, call_id, turn_index, start_time, end_time, text,
+             speaker_label, speaker_channel_index, speaker_cluster_id, speaker_confidence)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         turns,
     )
@@ -390,6 +447,7 @@ def persist_fusion_results(
     *,
     segment_results: list[FusedSegmentResult],
     analysis_result: AnalysisResultRow,
+    completed_at: str,
 ) -> None:
     """Story 1.6 (AD-8, AC 7): writes every `TimelineSegment`'s fusion
     output, the single Call-level `AnalysisResult` row, AND the
@@ -407,7 +465,12 @@ def persist_fusion_results(
     `AnalysisResult` write is an upsert (`ON CONFLICT`) rather than a plain
     `INSERT`: `run_fusion` is not guaranteed to be invoked exactly once by
     RQ's own delivery semantics (at-least-once), so a retry must not raise a
-    PRIMARY KEY violation."""
+    PRIMARY KEY violation.
+
+    Story 2.4: `completed_at` (caller-supplied, same `datetime.now(UTC).
+    isoformat()` pattern web-api's `upload_call` uses for `created_at`) is
+    written in the same statement as the `status = "complete"` transition,
+    preserving this function's own single-transaction atomicity guarantee."""
     conn.executemany(
         """
         UPDATE TimelineSegment
@@ -454,7 +517,10 @@ def persist_fusion_results(
             analysis_result.segments_flagged_count,
         ),
     )
-    conn.execute("UPDATE Call SET status = ? WHERE id = ?", ("complete", analysis_result.call_id))
+    conn.execute(
+        "UPDATE Call SET status = ?, completed_at = ? WHERE id = ?",
+        ("complete", completed_at, analysis_result.call_id),
+    )
     conn.commit()
 
 

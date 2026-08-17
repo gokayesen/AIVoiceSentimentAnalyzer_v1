@@ -1,0 +1,84 @@
+.confirm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 20, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-7);
+  /* No z-index token exists in tokens.css — this is the only overlay/modal
+     surface in the product (DESIGN.md "Elevation & Depth"), so there's
+     nothing to stack against; a literal value is used deliberately, not a
+     fabricated token (code review, 2026-08-15). */
+  z-index: 100;
+}
+
+.confirm-dialog {
+  background: var(--color-panel);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(11, 15, 20, 0.18);
+  padding: var(--space-8);
+  width: 300px;
+  max-width: 100%;
+}
+
+.confirm-dialog__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-heading-sm-size);
+  font-weight: var(--font-heading-sm-weight);
+  color: var(--color-text);
+}
+
+.confirm-dialog__filename {
+  font-family: var(--font-family-mono);
+}
+
+.confirm-dialog__body {
+  font-size: var(--font-body-size);
+  line-height: var(--font-body-line-height);
+  color: var(--color-text-dim);
+  margin: var(--space-3) 0 0;
+}
+
+.confirm-dialog__warning {
+  font-size: var(--font-data-inline-size);
+  color: var(--color-negative);
+  font-weight: 600;
+  line-height: var(--font-body-line-height);
+  margin: var(--space-4) 0 0;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+
+.confirm-dialog__cancel,
+.confirm-dialog__delete {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-body-size);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.confirm-dialog__cancel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.confirm-dialog__delete {
+  background: var(--color-negative);
+  border: 1px solid var(--color-negative);
+  color: var(--color-panel);
+}
+
+.confirm-dialog__cancel:focus-visible,
+.confirm-dialog__delete:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

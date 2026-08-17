@@ -78,10 +78,12 @@ def call_not_found(call_id: str) -> UploadValidationError:
     )
 
 
-def call_not_complete(call_id: str, status: str) -> UploadValidationError:
+def call_not_complete(
+    call_id: str, status: str, resource: str = "This data"
+) -> UploadValidationError:
     return UploadValidationError(
         error_code="CALL_NOT_COMPLETE",
-        message=f"Call {call_id} is currently '{status}'. The Emotional Timeline is only "
+        message=f"Call {call_id} is currently '{status}'. {resource} is only "
         "available once the Call reaches 'complete'.",
         next_step="Poll the Call's status and retry once it reaches 'complete'.",
         status_code=409,

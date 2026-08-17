@@ -19,6 +19,7 @@ sixth call site, and do not make this job self-triggering/re-entrant."""
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 
 from app import db
 from app.pipeline.fusion.fuse import FusedSegment, fuse_segment, reduce_call
@@ -50,7 +51,12 @@ def run_fusion(call_id: str) -> None:
         # "no speech detected, nothing to report" signal for downstream
         # consumers (Story 1.7+), distinct from a real internal failure.
         if not segments:
-            db.set_call_status(conn, call_id=call_id, status="complete")
+            db.set_call_status(
+                conn,
+                call_id=call_id,
+                status="complete",
+                completed_at=datetime.now(UTC).isoformat(),
+            )
             logger.info(
                 "fusion completed with zero segments — no speech detected, "
                 "no AnalysisResult produced",
@@ -103,7 +109,10 @@ def run_fusion(call_id: str) -> None:
         # so "fusion results persisted" and "Call marked complete" can never
         # diverge (a failure in one no longer leaves the other half-done).
         db.persist_fusion_results(
-            conn, segment_results=segment_results, analysis_result=analysis_result
+            conn,
+            segment_results=segment_results,
+            analysis_result=analysis_result,
+            completed_at=datetime.now(UTC).isoformat(),
         )
 
         logger.info(

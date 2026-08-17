@@ -43,7 +43,7 @@ def _seed_turns_directly(call_id: str, texts: list[str]) -> None:
     conn = db.get_connection()
     try:
         turns = [
-            (str(uuid.uuid4()), call_id, idx, float(idx), float(idx) + 1.0, text)
+            (str(uuid.uuid4()), call_id, idx, float(idx), float(idx) + 1.0, text, None, None, None, None)
             for idx, text in enumerate(texts)
         ]
         db.persist_transcript_turns(conn, turns=turns, words=[])

@@ -130,3 +130,59 @@ def test_delete_await_poll_interval_negative_raises_at_import():
 def test_delete_await_poll_interval_valid_imports_cleanly():
     result = _run_with_env({"DELETE_AWAIT_POLL_INTERVAL_SECONDS": "0.1"})
     assert result.returncode == 0, result.stderr
+
+
+# Story 3.3 (AC6, AD-10): SPEAKER_UNCERTAIN_THRESHOLD — a [0, 1]-bounded
+# domain threshold, same validation shape as LOW_CONFIDENCE_THRESHOLD above,
+# but a fully independent variable (never conflated with the Sentiment/
+# Emotion confidence axis).
+
+
+def test_speaker_uncertain_threshold_above_one_raises_at_import():
+    result = _run_with_env({"SPEAKER_UNCERTAIN_THRESHOLD": "1.5"})
+    assert result.returncode != 0
+    assert "SPEAKER_UNCERTAIN_THRESHOLD" in result.stderr
+
+
+def test_speaker_uncertain_threshold_below_zero_raises_at_import():
+    result = _run_with_env({"SPEAKER_UNCERTAIN_THRESHOLD": "-0.1"})
+    assert result.returncode != 0
+    assert "SPEAKER_UNCERTAIN_THRESHOLD" in result.stderr
+
+
+def test_speaker_uncertain_threshold_malformed_raises_at_import_naming_the_variable():
+    result = _run_with_env({"SPEAKER_UNCERTAIN_THRESHOLD": "0.5x"})
+    assert result.returncode != 0
+    final_line = result.stderr.strip().splitlines()[-1]
+    assert "SPEAKER_UNCERTAIN_THRESHOLD" in final_line
+
+
+def test_speaker_uncertain_threshold_lower_boundary_imports_cleanly():
+    result = _run_with_env({"SPEAKER_UNCERTAIN_THRESHOLD": "0"})
+    assert result.returncode == 0, result.stderr
+
+
+def test_speaker_uncertain_threshold_upper_boundary_imports_cleanly():
+    result = _run_with_env({"SPEAKER_UNCERTAIN_THRESHOLD": "1"})
+    assert result.returncode == 0, result.stderr
+
+
+def test_speaker_uncertain_threshold_is_independent_of_low_confidence_threshold():
+    """Code review (2026-08-17, AD-10): the two confidence-axis thresholds
+    must never be aliased or accidentally coupled — set both env vars to
+    different values simultaneously and confirm each parsed variable holds
+    its own distinct value, not the other's."""
+    env = {**os.environ, "LOW_CONFIDENCE_THRESHOLD": "0.3", "SPEAKER_UNCERTAIN_THRESHOLD": "0.7"}
+    result = subprocess.run(
+        [sys.executable, "-c", "import app.config as c; print(c.LOW_CONFIDENCE_THRESHOLD, c.SPEAKER_UNCERTAIN_THRESHOLD)"],
+        cwd=_APP_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    low_confidence, speaker_uncertain = result.stdout.split()
+    assert float(low_confidence) == 0.3
+    assert float(speaker_uncertain) == 0.7

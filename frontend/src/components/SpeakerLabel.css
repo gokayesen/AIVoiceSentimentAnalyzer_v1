@@ -1,0 +1,18 @@
+.speaker-label {
+  font-size: var(--font-label-size);
+  font-weight: var(--font-label-weight);
+  letter-spacing: var(--font-label-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+/* Story 2.5 (Task 9): deliberately *dotted*, never the transcript-turn
+   low-confidence variant's *dashed* border — the two independent
+   uncertainty axes (speaker-attribution confidence vs. Sentiment/Emotion
+   confidence) must never be visually conflated, even co-occurring on the
+   same turn (DESIGN.md components.speaker-label). */
+.speaker-label--uncertain {
+  color: var(--color-text-faint);
+  text-decoration: underline dotted var(--color-low-confidence-border);
+  text-underline-offset: 3px;
+}

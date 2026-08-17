@@ -1,0 +1,57 @@
+.session-strip {
+  background: var(--color-chrome);
+  padding: var(--space-4) var(--space-8);
+}
+
+.session-strip__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.session-strip__title {
+  margin: 0;
+  font-size: var(--font-heading-sm-size);
+  font-weight: var(--font-heading-sm-weight);
+  color: var(--color-chrome-text-strong);
+}
+
+.session-strip__add-call {
+  background: transparent;
+  border: none;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-chrome-text);
+  font-size: var(--font-label-size);
+  font-weight: var(--font-label-weight);
+  letter-spacing: var(--font-label-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.session-strip__add-call:focus-visible {
+  outline: 2px solid var(--color-focus-ring-on-chrome);
+  outline-offset: 2px;
+}
+
+/* Neither DESIGN.md typography role fits a plain, non-bold, non-monospace
+   caption line: `label` is bold/uppercase/letter-spaced, `data-sm` is bold
+   monospace. Only `font-size` (11px, the `label`/`data-sm` shared size) is
+   token-sourced from either; the plain weight/case matches the mock's own
+   subtitle rendering, which DESIGN.md's component list doesn't formally
+   specify (`session-strip` has no canonical DESIGN.md component entry). */
+.session-strip__subtitle {
+  margin-top: var(--space-1);
+  font-size: var(--font-label-size);
+  color: var(--color-chrome-text);
+}
+
+.session-call-list__content {
+  background: var(--color-bg);
+  padding: var(--space-8);
+}
+
+.session-call-list__empty-prompt {
+  color: var(--color-text-dim);
+  font-size: var(--font-body-size);
+}

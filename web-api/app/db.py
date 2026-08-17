@@ -25,6 +25,21 @@ normal operation, so that (a) `DELETE FROM AnalysisResult ...` etc. don't
 raise "no such table" in web-api's own isolated test suite, which never runs
 ml-service's init_db(), and (b) a real deployment doesn't race ml-service's
 worker container's own (also idempotent) table creation at startup.
+
+Story 3.1 adds `TranscriptTurn.speaker_label`/`speaker_channel_index`
+(hand-synced from ml-service/app/db.py, AD-7) — `get_transcript` reads
+`speaker_label` only; `speaker_channel_index` is internal provenance, never
+read here either.
+
+Story 3.2 adds `TranscriptTurn.speaker_cluster_id`/`speaker_confidence`
+(hand-synced from ml-service/app/db.py, AD-7) — `speaker_cluster_id` is
+internal provenance of the mono diarization filter, never read or returned
+by `get_transcript`; `speaker_label` already carries mono values through
+unchanged, same field as the stereo path populates.
+
+Story 3.3 reads `speaker_confidence` in `get_transcript` (never persisted
+as its own API-visible column) to derive the response's `speaker_uncertain`
+flag at read time — see that function's own docstring.
 """
 
 from __future__ import annotations
@@ -34,6 +49,9 @@ from pathlib import Path
 
 from app.config import DB_PATH
 
+# `completed_at` (Story 2.4, nullable): hand-synced with ml-service/app/db.py
+# (AD-7) — only ml-service ever writes it (set the moment `status` becomes
+# "complete"); web-api only ever reads it (get_call_status, Story 2.4 Task 2).
 _CREATE_CALL_TABLE = """
 CREATE TABLE IF NOT EXISTS Call (
     id TEXT PRIMARY KEY,
@@ -43,7 +61,8 @@ CREATE TABLE IF NOT EXISTS Call (
     duration_seconds REAL NOT NULL,
     size_bytes INTEGER NOT NULL,
     created_at TEXT NOT NULL,
-    channel_count INTEGER
+    channel_count INTEGER,
+    completed_at TEXT
 );
 """
 
@@ -90,6 +109,17 @@ CREATE TABLE IF NOT EXISTS AnalysisResult (
 # Deliberately NO segment_id column (AD-11: TranscriptTurn relates to
 # TimelineSegment only via time-range overlap, never a scalar FK) — unrelated
 # to why it's here (delete-only), noted so this DDL isn't "fixed" to add one.
+# Story 3.1: speaker_label/speaker_channel_index hand-synced from
+# ml-service's own DDL comment (AD-2) — web-api only reads speaker_label
+# (get_transcript); speaker_channel_index is internal provenance, never
+# read or returned here either.
+# Story 3.2: speaker_cluster_id/speaker_confidence hand-synced from
+# ml-service's own DDL comment (AD-6) — speaker_cluster_id is
+# speaker_channel_index's mono-path counterpart (internal provenance, never
+# read or returned here). speaker_confidence is the per-turn diarization
+# confidence (AD-6/AD-10) — Story 3.3 reads it (get_transcript) to derive
+# the API-visible speaker_uncertain flag at response time, never persisting
+# a redundant column for it (see get_transcript's own docstring).
 _CREATE_TRANSCRIPT_TURN_TABLE = """
 CREATE TABLE IF NOT EXISTS TranscriptTurn (
     id TEXT PRIMARY KEY,
@@ -101,7 +131,11 @@ CREATE TABLE IF NOT EXISTS TranscriptTurn (
     text_sentiment TEXT,
     text_emotion TEXT,
     text_confidence REAL,
-    text_keywords TEXT
+    text_keywords TEXT,
+    speaker_label TEXT,
+    speaker_channel_index INTEGER,
+    speaker_cluster_id TEXT,
+    speaker_confidence REAL
 );
 """
 
@@ -231,11 +265,46 @@ def get_call(conn: sqlite3.Connection, *, call_id: str) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM Call WHERE id = ?", (call_id,)).fetchone()
 
 
+def get_analysis_result(conn: sqlite3.Connection, *, call_id: str) -> sqlite3.Row | None:
+    """Story 2.2: read-only `AnalysisResult` lookup for the Call-status
+    endpoint (Sentiment/Emotion/Confidence once a Call is `complete`) — the
+    "future results endpoint" `get_call`'s own docstring above anticipated.
+    Read-only: web-api never writes this table (AD-13)."""
+    return conn.execute(
+        "SELECT * FROM AnalysisResult WHERE call_id = ?", (call_id,)
+    ).fetchone()
+
+
 def get_timeline_segments(conn: sqlite3.Connection, *, call_id: str) -> list[sqlite3.Row]:
     """Story 1.7 (AC 1, 3): ordered by segment_index — identical query shape
     to ml-service's own get_timeline_segments. Read-only: web-api never
     writes this table (AD-13)."""
     return conn.execute(
         "SELECT * FROM TimelineSegment WHERE call_id = ? ORDER BY segment_index",
+        (call_id,),
+    ).fetchall()
+
+
+def get_transcript_turns(conn: sqlite3.Connection, *, call_id: str) -> list[sqlite3.Row]:
+    """Story 2.4 (Task 3): ordered by turn_index — same read-only,
+    ordered-by-index pattern as get_timeline_segments above. Read-only:
+    web-api never writes this table (AD-13)."""
+    return conn.execute(
+        "SELECT * FROM TranscriptTurn WHERE call_id = ? ORDER BY turn_index",
+        (call_id,),
+    ).fetchall()
+
+
+def get_acoustic_evidence_for_call(conn: sqlite3.Connection, *, call_id: str) -> list[sqlite3.Row]:
+    """Story 2.4 (Task 4): every AcousticEvidence row belonging to one Call,
+    joined through TimelineSegment (AcousticEvidence has no call_id column
+    of its own — only segment_id, same relationship delete_call_cascade's
+    subquery above already relies on). No ORDER BY: this story only
+    aggregates these rows (get_acoustic_summary), never lists them
+    per-segment. Read-only: web-api never writes this table (AD-13)."""
+    return conn.execute(
+        "SELECT AcousticEvidence.* FROM AcousticEvidence "
+        "JOIN TimelineSegment ON AcousticEvidence.segment_id = TimelineSegment.id "
+        "WHERE TimelineSegment.call_id = ?",
         (call_id,),
     ).fetchall()
