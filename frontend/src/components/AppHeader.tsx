@@ -32,9 +32,9 @@ export function AppHeader({
       </button>
       <div className="app-header__user">
         <span className="app-header__avatar" aria-hidden="true">
-          EY
+          GE
         </span>
-        Elif Y. · CX Analyst
+        Gokay E. · CX Analyst
       </div>
     </header>
   )

@@ -18,7 +18,7 @@ describe('AppHeader', () => {
 
   it('renders the analyst identity (name + role), no login UI', () => {
     render(<AppHeader />)
-    expect(screen.getByText(/Elif Y\. · CX Analyst/)).toBeInTheDocument()
+    expect(screen.getByText(/Gokay E\. · CX Analyst/)).toBeInTheDocument()
   })
 
   it('never renders any login/account UI (AC1 — MVP has no auth)', () => {
