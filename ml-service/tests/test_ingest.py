@@ -15,6 +15,7 @@ import fakeredis
 import pytest
 from rq import Queue
 
+from app import config
 from app.pipeline.ingest.run import IngestError, run_ingest
 
 
@@ -94,7 +95,10 @@ def test_ingest_success_enqueues_acoustic_job_with_correct_path_and_call_id(
     (never a direct import, AD-7) and passing the same call_id — a typo in
     either would silently break the ingest->acoustic hand-off while every
     other ingest test (which only exercises the fake queue incidentally)
-    stays green."""
+    stays green. Also asserts the job's timeout is explicitly overridden to
+    config.ACOUSTIC_JOB_TIMEOUT_SECONDS (fixed 2026-08-18: RQ's 180s default
+    was too low for this specific job — see config.py's comment) rather than
+    silently falling back to RQ's 180s class default."""
     call_id = str(uuid.uuid4())
     make_call(call_id, audio_src=fixtures_dir / "mono.wav")
 
@@ -104,6 +108,7 @@ def test_ingest_success_enqueues_acoustic_job_with_correct_path_and_call_id(
     assert len(jobs) == 1
     assert jobs[0].func_name == "app.pipeline.acoustic.run.run_acoustic"
     assert jobs[0].args == (call_id,)
+    assert jobs[0].timeout == config.ACOUSTIC_JOB_TIMEOUT_SECONDS
 
 
 def test_ingest_job_resolvable_by_rq_string_reference(make_call, call_row, fixtures_dir: Path):

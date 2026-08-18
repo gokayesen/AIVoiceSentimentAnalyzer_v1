@@ -72,6 +72,12 @@ The web layer (FastAPI + React) is a conventional consumer/adapter that sits in 
 - **Prevents:** A future dependency bump silently pulling in pyannote's commercial precision-2 tier (or any paid-license pyannote tier), or diarization logic leaking into the stereo path where it doesn't belong. Also prevents a diarization failure from being silently swallowed or misrepresented as a confident per-turn reading.
 - **Rule:** Mono-path diarization is performed by WhisperX orchestrating faster-whisper transcription, forced alignment, and pyannote.audio's 4.0 Community-1 pipeline (CC-BY-4.0, HF-gated). The commercial precision-2 tier, or any tier requiring a paid license, must never be used. Stereo input never invokes WhisperX or diarization. Diarization confidence is expected to be systematically lower during overlapping/emotionally-charged speech — exactly the turns this product cares about most (Technical Research §5.4) — so per-turn confidence (AD-10) must be captured, not discarded. Two distinct failure states must be representable, not conflated: if diarization produces no usable speaker split for the Call at all, the whole Call gets a Call-level "attribution unavailable" state (still a full Analysis Result per FR-16, just without a per-speaker breakdown); if diarization succeeds overall but a specific turn's speaker label is low-confidence, that turn gets the per-turn "uncertain" state (AD-10) while the rest of the Call's attribution stands.
 
+- **[SUPERSEDED IN PART — implementation deviation, confirmed with user, recorded 2026-08-17 via Epic 3 retrospective]:** The "WhisperX orchestrating..." clause above is no longer implemented as written. At Story 3.2 implementation time, every `whisperx` release supporting pyannote.audio's Community-1 tier (3.8.0+) requires `torch~=2.8.0`, which conflicts with this project's Stack-pinned `torch==2.13.0` (already load-bearing for Stories 1.3-1.5's shipped pipeline stages); no `whisperx` release satisfies both constraints. Presented to the user as a three-way choice — (a) use whisperx 3.7.0, verified to silently downgrade to pyannote's non-Community-1 `speaker-diarization-3.1` model, violating this AD's own tier requirement; (b) downgrade `torch`/`transformers` project-wide, rejected as disproportionate blast radius against already-shipped, tested pipeline stages; (c) drop `whisperx`, call `pyannote.audio.Pipeline` directly — chosen.
+  - **What changed:** `ml-service/app/pipeline/transcript/diarize.py` calls `pyannote.audio.Pipeline.from_pretrained("pyannote/speaker-diarization-community-1", ...)` directly and implements its own word-to-speaker time-overlap lookup (mirroring `fusion/overlap.py`'s existing pattern), instead of WhisperX's `assign_word_speakers`. WhisperX's forced-realignment step (`align()`) is skipped entirely; word-to-speaker attribution relies on faster-whisper's own already-persisted word-level timestamps (Story 1.4, AD-5) rather than a second, WhisperX-driven alignment pass. `whisperx` is no longer a project dependency (removed from `ml-service/pyproject.toml`).
+  - **What did not change:** the pinned diarization model/tier (`pyannote/speaker-diarization-community-1`, CC-BY-4.0, HF-gated) — this AD's core "never the paid precision-2 tier" prohibition is fully intact and enforced (model id hardcoded, never configurable). Every other clause of this AD (mono-only, stereo never invokes it, per-turn confidence captured via a word-agreement-ratio heuristic — a dev-agent decision consistent with this AD's own "confidence should be lower for overlapping speech" expectation — and the two distinct failure-state requirement) is implemented as written and verified by Story 3.2/3.3's test suites.
+  - **Capability impact assessed:** dropping forced re-alignment removes a secondary, WhisperX-internal timestamp-refinement pass. No FR, AC, or other AD in this document requires that refinement specifically — AD-5 requires only word-level timestamps from the STT engine, which faster-whisper already provides directly; no UX or PRD document names alignment precision as a requirement. Reviewed against FR-16, AD-2, AD-5, AD-10, and NFR-1 (explainability/evidence-linkage): none are violated. Any residual word/speaker-boundary imprecision from skipping re-alignment is expected to surface as a lower word-agreement-ratio confidence value (i.e. becomes visible as reduced confidence, not silently wrong high-confidence attribution) — consistent with this AD's own design intent.
+  - **Stack table:** the `WhisperX` row below is retained for historical/planning traceability but is no longer an active project dependency as of Story 3.2.
+
 ### AD-7 — Model serving boundary: one consolidated ML/audio service
 
 - **Binds:** all pipeline capabilities (FR-4 through FR-11); FR-3 (async status)
@@ -109,7 +115,7 @@ flowchart LR
 
 - **Binds:** FR-10, FR-14, FR-16
 - **Prevents:** A future data model or API response merging Sentiment/Emotion confidence and speaker-attribution confidence into one composite score, making it impossible to show "confident sentiment, uncertain speaker attribution" as EXPERIENCE.md's state patterns require.
-- **Rule:** Sentiment/Emotion confidence (from calibrated fusion, AD-9) and speaker-attribution/diarization confidence (from WhisperX/pyannote, mono path only) are stored, computed, and surfaced as two separate fields at every layer — data model, API, UI. No code may combine them into a single score. On `TranscriptTurn` and `TimelineSegment` records specifically, both fields must be co-present on the same row (not merely reachable via a join) — EXPERIENCE.md's State Patterns require a confident Sentiment/Emotion reading and an uncertain speaker-attribution reading to be legible together on one turn.
+- **Rule:** Sentiment/Emotion confidence (from calibrated fusion, AD-9) and speaker-attribution/diarization confidence (from pyannote, mono path only — see AD-6's deviation record for why this is pyannote-direct rather than WhisperX-orchestrated) are stored, computed, and surfaced as two separate fields at every layer — data model, API, UI. No code may combine them into a single score. On `TranscriptTurn` and `TimelineSegment` records specifically, both fields must be co-present on the same row (not merely reachable via a join) — EXPERIENCE.md's State Patterns require a confident Sentiment/Emotion reading and an uncertain speaker-attribution reading to be legible together on one turn.
 
 ### AD-11 — Chunking/timeline unification: one VAD boundary set, two consumers
 
@@ -193,7 +199,7 @@ flowchart LR
 | FastAPI | 0.141.1 |
 | React | 19.2.8 |
 | faster-whisper | v1.2.1 (MIT — verify LICENSE file at implementation time; Technical Research flagged this as not independently confirmed) |
-| WhisperX | 3.8.6 (pinned — normal semver release, not an unversioned rolling dependency; license ambiguity between BSD-2 and BSD-4 noted by Technical Research — verify LICENSE file before depending on it) |
+| WhisperX | 3.8.6 (pinned) — **no longer an active dependency as of Story 3.2; see AD-6's deviation record.** Retained here for historical/planning traceability only. |
 | pyannote.audio | 4.0.7 (Community-1 pipeline, CC-BY-4.0, HF-gated) |
 | transformers | v5.14.1 |
 | PyTorch | 2.13 |
@@ -237,7 +243,7 @@ flowchart TB
     pipeline/
       ingest/            # channel detection, VAD/chunk-boundary detection
       acoustic/           # SER classifier + handcrafted-feature explainability layer
-      transcript/          # faster-whisper STT + WhisperX/pyannote diarization (mono path) + text-sentiment classifier
+      transcript/          # faster-whisper STT + pyannote diarization (mono path, direct — see AD-6 deviation record) + text-sentiment classifier
       fusion/               # rule-based fusion + disagreement flag + Secondary Signal
       calibration/           # temperature scaling
   frontend/              # React 19 app (DESIGN.md token system, EXPERIENCE.md state patterns)

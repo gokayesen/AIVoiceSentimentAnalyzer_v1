@@ -8,7 +8,7 @@ import logging
 
 from app import db, queue
 from app.audio import load_mono_waveform
-from app.config import ACOUSTIC_SANITY_FLOOR
+from app.config import ACOUSTIC_SANITY_FLOOR, TRANSCRIPT_JOB_TIMEOUT_SECONDS
 from app.pipeline.acoustic.classifier import classify_segment
 from app.pipeline.acoustic.features import extract_features
 from app.pipeline.acoustic.taxonomy import raw_label_to_emotion
@@ -113,9 +113,16 @@ def run_acoustic(call_id: str) -> None:
         # unreachable) must not roll back or fail this already-successful,
         # already-committed acoustic Call — it is a downstream hand-off
         # problem, not an acoustic-analysis failure (AD-1).
+        # job_timeout: RQ's class-level 180s default is too low for this
+        # specific job — see config.TRANSCRIPT_JOB_TIMEOUT_SECONDS's own
+        # comment for the full rationale (real-world bug report, 2026-08-18,
+        # same class of fix as the acoustic enqueue's own job_timeout).
+        # Passed explicitly here only; RQ's global default is untouched.
         try:
             queue.get_transcript_queue().enqueue(
-                "app.pipeline.transcript.run.run_transcript", call_id
+                "app.pipeline.transcript.run.run_transcript",
+                call_id,
+                job_timeout=TRANSCRIPT_JOB_TIMEOUT_SECONDS,
             )
         except Exception:
             logger.exception(

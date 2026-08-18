@@ -6,7 +6,7 @@ import uuid
 
 import pytest
 
-from app import db
+from app import config, db
 from app.pipeline.acoustic.run import AcousticSanityFloorError, run_acoustic
 
 
@@ -107,7 +107,11 @@ def test_run_acoustic_success_enqueues_transcript_job_with_correct_path_and_call
     """Story 1.4/AD-13 stage-chaining: a successful run_acoustic must enqueue
     exactly one transcript job, referencing run_transcript by its exact
     import-path string (never a direct import, AD-7) and passing the same
-    call_id — mirrors Story 1.3's ingest->acoustic enqueue test."""
+    call_id — mirrors Story 1.3's ingest->acoustic enqueue test. Also asserts
+    the job's timeout is explicitly overridden to
+    config.TRANSCRIPT_JOB_TIMEOUT_SECONDS (fixed 2026-08-18: RQ's 180s
+    default was too low for this specific job too — see config.py's comment)
+    rather than silently falling back to RQ's 180s class default."""
     call_id = str(uuid.uuid4())
     make_call(call_id, audio_src=fixtures_dir / "speech.wav")
     _seed_segments(call_id, [(0.0, 1.5), (1.5, 3.0)])
@@ -118,6 +122,7 @@ def test_run_acoustic_success_enqueues_transcript_job_with_correct_path_and_call
     assert len(jobs) == 1
     assert jobs[0].func_name == "app.pipeline.transcript.run.run_transcript"
     assert jobs[0].args == (call_id,)
+    assert jobs[0].timeout == config.TRANSCRIPT_JOB_TIMEOUT_SECONDS
 
 
 def test_run_acoustic_transcript_enqueue_failure_does_not_fail_the_call(

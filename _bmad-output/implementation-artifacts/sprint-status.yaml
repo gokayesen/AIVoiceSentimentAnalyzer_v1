@@ -59,9 +59,9 @@ development_status:
   1-8-confidence-and-low-confidence-segment-flagging: done
   1-9-cross-modal-disagreement-surfacing: done
   1-10-call-deletion-backend: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
-  epic-2: in-progress
+  epic-2: done
   2-1-web-console-frontend-foundation-and-session-call-list-shell: done
   2-2-call-upload-and-processing-status-feedback: done
   2-3-delete-a-call-ui-only: done
@@ -69,11 +69,100 @@ development_status:
   2-5-timeline-transcript-and-acoustic-evidence-drill-down-low-confidence-and-disagreement-states: done
   2-6-no-certainty-language-standing-disclaimer-and-terminology-discipline: done
   2-7-accessibility-floor-and-responsive-fallback-cross-cutting-verification: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
-  epic-3: in-progress
+  epic-3: done
   3-1-stereo-channel-based-speaker-attribution: done
   3-2-mono-diarization-via-whisperx-and-pyannote: done
   3-3-speaker-attribution-failure-and-uncertainty-states: done
   3-4-speaker-attribution-surfaced-in-dashboard-and-call-list: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
+
+# MVP status: recorded 2026-08-17, confirmed by Project Lead after a dedicated
+# inspection-only verification pass (git/tests/docker/e2e/UX-AC/PRD-Architecture
+# cross-check). Not an Epic 4 authorization. Full report and the 3 new
+# non-blocking findings (W1-W3) it surfaced are in deferred-work.md's
+# "Final MVP Verification (2026-08-17)" section.
+mvp_status:
+  verified_date: 2026-08-17
+  epics_complete: 3
+  verdict: "MVP READY — no blockers"
+  report: _bmad-output/implementation-artifacts/mvp-verification-2026-08-17.md
+
+action_items:
+  - epic: 1
+    action: "Define a standard Docker/dev-container environment for ml-service so platform realities (Intel Mac/PyTorch compatibility) aren't rediscovered per story"
+    owner: "Charlie (Senior Dev)"
+    status: open
+  - epic: 1
+    action: "Require a short empirical preflight validation before implementation for any new ML model/library: checkpoint head loads correctly, inference runs, license is compatible, dependencies actually resolve"
+    owner: "Charlie (Senior Dev)"
+    status: open
+  - epic: 1
+    action: "Add an explicit Definition-of-Done checklist item distinguishing 'documentation says it works' from 'verified in the actual environment'"
+    owner: "Dana (QA Engineer)"
+    status: open
+  - epic: 1
+    action: "Formalize the previous-story-intelligence pattern so recurring review findings are carried automatically into the next story's implementation/review checklist"
+    owner: "Amelia (Developer)"
+    status: open
+  - epic: 1
+    action: "Consolidate recurring reliability gaps (DB connection lifecycle, PRAGMA foreign_keys, retry/idempotency, finite-confidence validation) into a shared utility/pattern or review checklist item"
+    owner: "Dana (QA Engineer) + Amelia (Developer)"
+    status: open
+  - epic: 1
+    action: "Do not bump ACOUSTIC_SANITY_FLOOR to an arbitrary value; keep it deferred against AD-17 calibration/evaluation work, but keep it more visibly prioritized than other deferred items"
+    owner: "Charlie (Senior Dev)"
+    status: open
+  - epic: 1
+    action: "Triage deferred-work.md items into 'needed for next epic' / 'AD-17 scope' / 'long-term' tags"
+    owner: "Alice (Product Owner) + Amelia (Developer)"
+    status: done
+  - epic: 2
+    action: "Determine which ACs actually require real-browser validation (focus-ring, text-scaling, responsive layout) that jsdom cannot verify, and decide whether/how to fold that into a future UI-heavy story's Definition of Done"
+    owner: "Dana (QA Engineer)"
+    status: open
+  - epic: 2
+    action: "Standardize a short API-contract-gap review before starting a future UI-heavy epic"
+    owner: "Alice (Product Owner)"
+    status: open
+  - epic: 2
+    action: "Add an explicit review-checklist invariant against nesting interactive elements in ways that break accessible-name computation"
+    owner: "Dana (QA Engineer)"
+    status: open
+  - epic: 2
+    action: "Standard Docker/dev-container environment for ml-service (carried from Epic 1, priority raised after Story 2.5's end-to-end pass failed on insufficient Docker VM RAM)"
+    owner: "Charlie (Senior Dev)"
+    status: open
+  - epic: 2
+    action: "Own and close CallRow state-transition aria-live gap (re-logged in deferred-work.md, no owner yet)"
+    owner: "unassigned"
+    status: open
+  - epic: 2
+    action: "Resolve duplicate-filename ambiguous accessible name via a product/UX decision (re-logged in deferred-work.md)"
+    owner: "unassigned"
+    status: open
+  - epic: 2
+    action: "Assign a story to close Story 2.3's AC2 (Dashboard delete action) or formally descope it (re-logged in deferred-work.md)"
+    owner: "unassigned"
+    status: open
+  - epic: 3
+    action: "Architecture reconciliation for AD-6 (WhisperX deviation) in ARCHITECTURE-SPINE.md"
+    owner: "Amelia (Developer)"
+    status: done
+  - epic: 3
+    action: "API-contract-gap preflight: mandatory gate before starting a future epic/major UI or integration work, verifying all backend contracts the new work needs already exist"
+    owner: "Alice (Product Owner) + Winston (Architect)"
+    status: open
+  - epic: 3
+    action: "ML preflight: mandatory gate before implementation on any new model/library combination, verifying pinned versions install together, the critical combination actually runs, and the architecture-specified pipeline is achievable at runtime"
+    owner: "Charlie (Senior Dev)"
+    status: open
+  - epic: 3
+    action: "Own the schema migration path (recurring since Epic 1, still unassigned)"
+    owner: "unassigned"
+    status: open
+  - epic: 3
+    action: "Add a review-checklist check for whether a regression test would actually fail if the guarded behavior regressed (weak/misleading test pattern recurred in 3.1, 3.2, 3.3)"
+    owner: "Dana (QA Engineer)"
+    status: open

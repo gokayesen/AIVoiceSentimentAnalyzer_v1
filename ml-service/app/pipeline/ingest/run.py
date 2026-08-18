@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import uuid
 
-from app import db, queue
+from app import config, db, queue
 from app.audio import load_mono_waveform
 from app.pipeline.ingest.channel import detect_channel_count
 from app.pipeline.ingest.vad import VAD_SAMPLE_RATE, compute_speech_boundaries
@@ -78,7 +78,16 @@ def run_ingest(call_id: str) -> None:
         # Indirected through app.queue.get_acoustic_queue() (mirroring
         # web-api/app/queue.py's pattern) so tests can monkeypatch the
         # connection without a live Redis server.
-        queue.get_acoustic_queue().enqueue("app.pipeline.acoustic.run.run_acoustic", call_id)
+        # job_timeout: RQ's class-level default (180s) is too low for this
+        # specific job — see config.ACOUSTIC_JOB_TIMEOUT_SECONDS's own
+        # comment for the full rationale (real-world bug report, 2026-08-18).
+        # Passed explicitly here only; every other queue in this codebase
+        # keeps RQ's untouched 180s default.
+        queue.get_acoustic_queue().enqueue(
+            "app.pipeline.acoustic.run.run_acoustic",
+            call_id,
+            job_timeout=config.ACOUSTIC_JOB_TIMEOUT_SECONDS,
+        )
 
         # AC 5: ingest alone never completes a Call — status stays "processing"
         # until fusion (Story 1.6) exists to complete it.

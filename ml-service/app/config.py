@@ -90,6 +90,22 @@ if not 0 <= DISAGREEMENT_THRESHOLD <= 1:
 # check to a bare polarity mismatch, since virtually any nonzero confidence
 # "exceeds" it.
 
+# Fixed outside any story's scope (2026-08-18, real-world bug report): RQ's
+# own class-level default (`Queue.DEFAULT_TIMEOUT = 180`, rq/queue.py) is too
+# low specifically for the acoustic stage — `run_acoustic` classifies every
+# VAD-bounded segment sequentially with a CPU wav2vec2 forward pass (Story
+# 1.3), so total job duration scales with segment *count*, not just Call
+# duration; a pause-heavy 6-minute call reproduced 147 segments and blew the
+# 180s default just as reliably as a 10.8-minute one did. 900s (5x the
+# default) is a deliberately generous empirical margin, not a tuned value —
+# chosen to comfortably clear the worst segment-count case observed so far
+# on this project's CPU-only target (AD-18) without masking a real hang
+# indefinitely. This raises this ONE job's timeout only (passed explicitly
+# to its `enqueue()` call) — RQ's global/other-queues' default stays 180s.
+# Does not fix the underlying slow-CPU-inference cause (see deferred-work.md
+# for that side of it); revisit if a Call is ever observed needing >900s.
+ACOUSTIC_JOB_TIMEOUT_SECONDS = int(os.environ.get("ACOUSTIC_JOB_TIMEOUT_SECONDS", "900"))
+
 # AD-5: STT engine is locked to faster-whisper; only the model *size* is a
 # dev-agent decision (see story 1-4's Dev Agent Record for rationale) — "base"
 # is a reasonable CPU int8 accuracy/speed starting point for a batch pipeline
@@ -98,6 +114,37 @@ WHISPER_MODEL_SIZE = os.environ.get("WHISPER_MODEL_SIZE", "base")
 # AD-18: CPU-only baseline — int8 quantization keeps CPU inference viable.
 WHISPER_COMPUTE_TYPE = os.environ.get("WHISPER_COMPUTE_TYPE", "int8")
 WHISPER_DEVICE = os.environ.get("WHISPER_DEVICE", "cpu")
+
+# Fixed outside any story's scope (2026-08-18, same real-world bug report as
+# ACOUSTIC_JOB_TIMEOUT_SECONDS above, discovered immediately after that fix
+# shipped): `run_transcript` has the identical shape — `transcribe_segment`
+# runs faster-whisper's beam-search decode sequentially per VAD-bounded
+# segment (Story 1.4), so this job's total duration also scales with segment
+# *count*, and it was still bare-enqueued with no `job_timeout` override, so
+# it inherited the same RQ 180s class default and died the same way (worked
+# in acoustic's 244-segment Call, immediately died in transcript for that
+# same Call). Sized by the same method as ACOUSTIC_JOB_TIMEOUT_SECONDS
+# (measured real per-segment rate x a segment-count headroom factor over the
+# largest segment count observed on this project to date), NOT copied from
+# it verbatim — faster-whisper's beam-search decode is measurably slower and
+# more variable per segment than wav2vec2's single forward pass. Benchmarked
+# directly against this project's own model/hardware (`transcribe_segment`,
+# real speech audio, 3-sample spot check): 5.39s-6.28s per ~2.5-4s
+# context-padded segment (~6.3s/segment worst case). 244 segments is the
+# largest segment count observed on this project to date (this same bug
+# report's own reproduction call) — using the same ~1.6x segment-count
+# headroom acoustic's 900s implies over its own 244-segment worst case
+# (900s / ~2.3s measured-worst-case-rate ~= 391 segments ~= 1.6x), headroom
+# target here is ~390 segments x 6.3s/segment ~= 2460s, rounded up to 2700s
+# (45 min) for a clean number and slightly more slack given this stage's
+# higher per-segment variance. Still an empirical safety margin, not a
+# tuned/measured ceiling — like the acoustic fix, this raises the timeout
+# ceiling only; it does not make per-segment decoding any faster. Revisit
+# (both this and ACOUSTIC_JOB_TIMEOUT_SECONDS) if a Call is ever observed
+# needing more, or once real batching/latency work is prioritized (see
+# deferred-work.md's "No batching in run_text_sentiment" entry, Story 1.5
+# review, for the same class of gap already flagged one stage over).
+TRANSCRIPT_JOB_TIMEOUT_SECONDS = int(os.environ.get("TRANSCRIPT_JOB_TIMEOUT_SECONDS", "2700"))
 
 # Story 1.5 (AD-19): dev-agent model decision, not an Architecture mandate —
 # RoBERTa-base fine-tuned on GoEmotions (28-class, MIT-licensed). The
