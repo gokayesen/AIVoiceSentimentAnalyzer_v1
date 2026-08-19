@@ -12,6 +12,7 @@ __pycache__/
 
 # Node (frontend, Story 2.1+)
 node_modules/
+dist/
 
 # OS
 .DS_Store

@@ -53,6 +53,32 @@ unavailable" rather than guessing when it can't produce a confident split.
 Full technical rationale and every binding architecture decision lives in
 [`_bmad-output/planning-artifacts/architecture/architecture-AIVoiceSentimentAnalyzer_v1-2026-08-10/ARCHITECTURE-SPINE.md`](_bmad-output/planning-artifacts/architecture/architecture-AIVoiceSentimentAnalyzer_v1-2026-08-10/ARCHITECTURE-SPINE.md).
 
+## Known limitations
+
+This is a dev/demo-scoped portfolio project (see the architecture doc's
+AD-12), not a production call-center product. Known, deliberately accepted
+gaps:
+
+- **No persistence or auth.** The call list is session-scoped in the
+  browser's memory; nothing survives a page reload, by design.
+- **Mono diarization needs `HF_TOKEN`.** Without it, mono calls still
+  process fully, just without a per-speaker breakdown.
+- **No real-browser accessibility validation.** Automated tests run under
+  jsdom; focus-ring rendering, 200% zoom reflow, and responsive-breakpoint
+  behavior have not been manually verified in a real browser.
+- **No schema migration tooling.** Schema changes rely on
+  `CREATE TABLE IF NOT EXISTS`, which doesn't retrofit an existing local DB
+  — delete `storage/app.db` after pulling a schema-changing update.
+- **A job that exceeds its processing timeout under heavy host CPU
+  contention can leave a Call stuck in `processing` permanently** — no
+  reconciliation sweep exists yet to catch and fail stale jobs.
+- **`ml-service` has no native (non-Docker) dev path on Intel macOS** — the
+  pinned PyTorch version publishes no `x86_64` macOS wheel. Docker is the
+  supported path on that platform.
+
+Full rationale and the complete, actively-maintained list lives in
+[`_bmad-output/implementation-artifacts/deferred-work.md`](_bmad-output/implementation-artifacts/deferred-work.md).
+
 ## Tech stack
 
 - **Backend API:** FastAPI (`web-api/`)
